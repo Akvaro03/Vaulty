@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+// 1. USUARIOS Y AUTENTICACIÓN
+model User {
+  id           String        @id @default(cuid()) // Mejor que integer
+  email        String        @unique
+  name         String?
+  accounts     Account[]
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+  createdAt    DateTime      @default(now())
+}
+
+// 2. CUENTAS (Bancos, Tarjetas, Efectivo) -> ¡Nueva y vital!
+model Account {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  name         String        // Ej: "Caja de Ahorro Santander"
+  type         AccountType   // Enum: BANK, CREDIT, CASH
+  transactions Transaction[]
+}
+
+// 3. CATEGORÍAS (Con UI helpers)
+model Category {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  name         String        // Ej: "Supermercado"
+  type         TransactionType // Enum: INCOME, EXPENSE
+  icon         String        // Ej: "shopping-cart"
+  color        String        // Ej: "#10b981"
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+// 4. TRANSACCIONES (El corazón de la app)
+model Transaction {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  accountId    String
+  account      Account       @relation(fields: [accountId], references: [id])
+  categoryId   String?       // Opcional por si es una transferencia
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  
+  amount       Decimal       @db.Decimal(12, 2) // Manejo preciso de dinero
+  type         TransactionType // Enum: INCOME, EXPENSE, TRANSFER
+  description  String?
+  date         DateTime      // Fecha en la que ocurrió el gasto
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// 5. PRESUPUESTOS (Atados a categoría y tiempo)
+model Budget {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id])
+  
+  amount       Decimal       @db.Decimal(12, 2)
+  month        Int           // 1-12
+  year         Int           // Ej: 2026
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum AccountType {
+  BANK
+  CASH
+  CREDIT
+}
