@@ -52,6 +52,7 @@ export type Transaction = {
   id: string
   name: string
   category: string
+  account?: string
   date: string
   amount: number
   type: "ingreso" | "gasto"
@@ -66,6 +67,32 @@ export const recentTransactions: Transaction[] = [
   { id: "6", name: "Gasolinera Repsol", category: "Transporte", date: "23 Jul", amount: -62.3, type: "gasto" },
   { id: "7", name: "Farmacia Central", category: "Salud", date: "22 Jul", amount: -34.5, type: "gasto" },
 ]
+
+// Cuentas disponibles para asignar a una transacción
+export type Account = {
+  id: string
+  name: string
+  detail: string
+}
+
+export const accounts: Account[] = [
+  { id: "principal", name: "Cuenta principal", detail: "•••• 4021" },
+  { id: "ahorro", name: "Cuenta de ahorro", detail: "•••• 8830" },
+  { id: "tarjeta", name: "Tarjeta de crédito", detail: "•••• 1195" },
+  { id: "efectivo", name: "Efectivo", detail: "Cartera" },
+]
+
+// Categorías separadas por tipo de movimiento
+export const expenseCategories = [
+  "Vivienda",
+  "Alimentación",
+  "Transporte",
+  "Ocio",
+  "Salud",
+  "Otros",
+] as const
+
+export const incomeCategories = ["Salario", "Extra", "Inversión", "Otros"] as const
 
 export type Budget = {
   category: string

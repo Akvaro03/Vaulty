@@ -6,16 +6,20 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
 // 1. USUARIOS Y AUTENTICACIÓN
 model User {
   id           String        @id @default(cuid()) // Mejor que integer
   email        String        @unique
+  password     String        @unique
   name         String?
   accounts     Account[]
   categories   Category[]
   transactions Transaction[]
   budgets      Budget[]
   createdAt    DateTime      @default(now())
+
+  recurringTransactions RecurringTransaction[]
 }
 
 // 2. CUENTAS (Bancos, Tarjetas, Efectivo) -> ¡Nueva y vital!
@@ -23,54 +27,90 @@ model Account {
   id           String        @id @default(cuid())
   userId       String
   user         User          @relation(fields: [userId], references: [id])
-  name         String        // Ej: "Caja de Ahorro Santander"
-  type         AccountType   // Enum: BANK, CREDIT, CASH
+  name         String // Ej: "Caja de Ahorro Santander"
+  type         AccountType // Enum: BANK, CREDIT, CASH
   transactions Transaction[]
+
+  recurringTransactions RecurringTransaction[]
 }
 
 // 3. CATEGORÍAS (Con UI helpers)
 model Category {
-  id           String        @id @default(cuid())
+  id           String          @id @default(cuid())
   userId       String
-  user         User          @relation(fields: [userId], references: [id])
-  name         String        // Ej: "Supermercado"
+  user         User            @relation(fields: [userId], references: [id])
+  name         String // Ej: "Supermercado"
   type         TransactionType // Enum: INCOME, EXPENSE
-  icon         String        // Ej: "shopping-cart"
-  color        String        // Ej: "#10b981"
+  icon         String // Ej: "shopping-cart"
+  color        String // Ej: "#10b981"
   transactions Transaction[]
   budgets      Budget[]
+
+  recurringTransactions RecurringTransaction[]
 }
 
-// 4. TRANSACCIONES (El corazón de la app)
+model RecurringTransaction {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  description    String // Ej: "Sueldo Empresa X", "Internet Fibra", "Alquiler"
+  expectedAmount Decimal         @db.Decimal(12, 2) // Monto estimado/base
+  type           TransactionType // INCOME (Sueldo) o EXPENSE (Gasto Fijo)
+
+  frequency  Frequency @default(MONTHLY)
+  dayOfMonth Int // Día programado (1 al 31)
+  isActive   Boolean   @default(true) // Permite pausar una suscripción/servicio sin borrarla
+
+  // Historial de transacciones reales que se crearon desde esta plantilla
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. ACTUALIZAMOS LA TABLA TRANSACTION (Para vincular si vino de un gasto fijo/sueldo)
 model Transaction {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id])
-  accountId    String
-  account      Account       @relation(fields: [accountId], references: [id])
-  categoryId   String?       // Opcional por si es una transferencia
-  category     Category?     @relation(fields: [categoryId], references: [id])
-  
-  amount       Decimal       @db.Decimal(12, 2) // Manejo preciso de dinero
-  type         TransactionType // Enum: INCOME, EXPENSE, TRANSFER
-  description  String?
-  date         DateTime      // Fecha en la que ocurrió el gasto
-  
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Opcional: Si este gasto/ingreso derivó de una recurrencia programada
+  recurringTransactionId String?
+  recurringTransaction   RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id])
+
+  amount      Decimal         @db.Decimal(12, 2) // El monto REAL cobrado/gastado
+  type        TransactionType // INCOME, EXPENSE, TRANSFER
+  description String?
+  date        DateTime // Fecha exacta en que se registró
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // 5. PRESUPUESTOS (Atados a categoría y tiempo)
 model Budget {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id])
-  categoryId   String
-  category     Category      @relation(fields: [categoryId], references: [id])
-  
-  amount       Decimal       @db.Decimal(12, 2)
-  month        Int           // 1-12
-  year         Int           // Ej: 2026
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  amount Decimal @db.Decimal(12, 2)
+  month  Int // 1-12
+  year   Int // Ej: 2026
 }
 
 enum TransactionType {
@@ -83,4 +123,11 @@ enum AccountType {
   BANK
   CASH
   CREDIT
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
 }

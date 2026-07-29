@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { AuthField } from "./AuthField";
+import loginService from "../service/auth.service";
+import { toast } from "sonner";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -24,11 +26,17 @@ export function LoginForm() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    setTimeout(() => setLoading(false), 1200);
+    try {
+      await loginService({ email, password });
+      toast.success("Se logro iniciar sesión")
+    } catch (error) {
+      toast.warning("No se logro iniciar sesión")
+    }
+    setLoading(false);
   }
 
   return (

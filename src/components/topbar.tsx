@@ -1,15 +1,16 @@
-"use client"
+"use client";
 
-import { Search, Bell, Plus } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { user } from "@/lib/finance-data"
+import { Search, Bell } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { user } from "@/lib/finance-data";
+import { TransactionDialog } from "@/features/transactions/components/TransactionDialog";
 
 function getGreeting() {
-  const h = new Date().getHours()
-  if (h < 6) return "Buenas noches"
-  if (h < 13) return "Buenos días"
-  if (h < 20) return "Buenas tardes"
-  return "Buenas noches"
+  const h = new Date().getHours();
+  if (h < 6) return "Buenas noches";
+  if (h < 13) return "Buenos días";
+  if (h < 20) return "Buenas tardes";
+  return "Buenas noches";
 }
 
 export function Topbar() {
@@ -17,7 +18,7 @@ export function Topbar() {
     weekday: "long",
     day: "numeric",
     month: "long",
-  }).format(new Date())
+  }).format(new Date());
 
   return (
     <header className="flex flex-col gap-4 border-b border-border px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8">
@@ -47,10 +48,7 @@ export function Topbar() {
           <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-primary ring-2 ring-secondary" />
         </button>
 
-        <button className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">Añadir</span>
-        </button>
+        <TransactionDialog />
 
         <Avatar className="size-10 border border-border">
           <AvatarFallback className="bg-secondary text-sm font-medium text-foreground">
@@ -59,5 +57,5 @@ export function Topbar() {
         </Avatar>
       </div>
     </header>
-  )
+  );
 }
