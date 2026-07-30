@@ -6,38 +6,41 @@ import { useEffect, useRef, useState } from "react";
 import { expenseCategories, incomeCategories } from "@/lib/finance-data";
 import createTransactionsService from "../service/createTransactions";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import getCategories from "@/features/categories/hooks/getCategories";
+import getAccounts from "@/features/account/hook/getAccount";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   isOpen: boolean;
   closeForm: () => void;
 }
 
-const accounts = [
-  {
-    id: "cash",
-    name: "Efectivo",
-    detail: "Billetera",
-  },
-  {
-    id: "bank",
-    name: "Banco",
-    detail: "Cuenta sueldo",
-  },
-];
 type TxType = "gasto" | "ingreso";
 
 export function TransactionForm({ isOpen, closeForm }: Props) {
   // const { isOpen, closeForm, addTransaction } = useTransactions();
-
+  const { data: categories, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["category"],
+    queryFn: getCategories,
+    staleTime: Infinity,
+  });
+  const { data: accounts, isLoading: isLoadingAccount } = useQuery({
+    queryKey: ["account"],
+    queryFn: getAccounts,
+    staleTime: Infinity,
+  });
+  const [isLoadingSubmit, setIsLoadingSubmit] = useState<boolean>(false);
   const [type, setType] = useState<TxType>("gasto");
   const [amount, setAmount] = useState("");
-  const [account, setAccount] = useState(accounts[0].id);
-  const [category, setCategory] = useState<string>(expenseCategories[0]);
+  const [account, setAccount] = useState("");
+  const [category, setCategory] = useState<string>("");
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const amountRef = useRef<HTMLInputElement>(null);
-  const categories = type === "gasto" ? expenseCategories : incomeCategories;
+  // const categories = type === "gasto" ? expenseCategories : incomeCategories;
 
   // Cierra con la tecla Escape
   useEffect(() => {
@@ -59,13 +62,13 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setIsLoadingSubmit(true);
     const value = Number.parseFloat(amount.replace(",", "."));
     if (!value || value <= 0) {
       setError("Introduce un monto válido mayor que 0.");
       amountRef.current?.focus();
       return;
     }
-    console.log({ name, category, account, amount: value, type });
     try {
       await createTransactionsService({
         userId: "cms7i2dzg0000n4driknx6f3y",
@@ -76,13 +79,16 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
         categoryId: "cms7i2e4y0001n4dr7yvhi0xk",
         description: name,
       });
-      toast.success("Se logro iniciar sesión");
-    } catch (error) {
-      toast.warning("No se logro iniciar sesión");
+      toast.success("Se creo una transacción");
+    } catch {
+      toast.warning("Hubo un error");
     }
+
+    setIsLoadingSubmit(true);
     closeForm();
   }
-
+  const isValid: boolean =
+    amount.length > 0 && account.length > 0 && category.length > 0 && !isLoadingSubmit;
   return (
     <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
       {/* Tipo de movimiento */}
@@ -144,22 +150,29 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
           Cuenta
         </span>
         <div className="grid grid-cols-2 gap-2">
-          {accounts.map((a) => (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => setAccount(a.id)}
-              className={cn(
-                "flex flex-col items-start rounded-xl border px-3 py-2.5 text-left transition-colors",
-                account === a.id
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-secondary hover:border-muted-foreground/40",
-              )}
-            >
-              <span className="text-sm font-medium">{a.name}</span>
-              <span className="text-xs text-muted-foreground">{a.detail}</span>
-            </button>
-          ))}
+          {isLoadingAccount ? (
+            <>
+              <Skeleton className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors h-15 w-50" />
+              <Skeleton className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors h-15 w-50" />
+            </>
+          ) : (
+            accounts?.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => setAccount(a.id)}
+                className={cn(
+                  "flex flex-col items-start rounded-xl border px-3 py-2.5 text-left transition-colors",
+                  account === a.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-secondary hover:border-muted-foreground/40",
+                )}
+              >
+                <span className="text-sm font-medium">{a.name}</span>
+                <span className="text-xs text-muted-foreground">{a.name}</span>
+              </button>
+            ))
+          )}
         </div>
       </div>
 
@@ -169,25 +182,34 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
           Categoría
         </span>
         <div className="flex flex-wrap gap-2">
-          {categories.map((c) => {
-            const active = category === c;
-            return (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(c)}
-                className={cn(
-                  "flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-                  active
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {active && <Check className="size-3.5 text-primary" />}
-                {c}
-              </button>
-            );
-          })}
+          {isLoadingCategories ? (
+            <>
+              <Skeleton className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors h-8 w-24" />
+              <Skeleton className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors h-8 w-24" />
+              <Skeleton className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors h-8 w-24" />
+              <Skeleton className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors h-8 w-24" />
+            </>
+          ) : (
+            categories?.map((c, key) => {
+              const active = category === c.id;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setCategory(c.id)}
+                  className={cn(
+                    "flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {active && <Check className="size-3.5 text-primary" />}
+                  {c.name}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -216,12 +238,13 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
         >
           Cancelar
         </button>
-        <button
+        <Button
           type="submit"
+          disabled={!isValid}
           className="h-11 flex-[1.5] rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
           Guardar transacción
-        </button>
+        </Button>
       </div>
     </form>
   );

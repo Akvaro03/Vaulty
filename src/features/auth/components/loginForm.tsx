@@ -33,7 +33,7 @@ export function LoginForm() {
     try {
       await loginService({ email, password });
       toast.success("Se logro iniciar sesión")
-    } catch (error) {
+    } catch {
       toast.warning("No se logro iniciar sesión")
     }
     setLoading(false);
