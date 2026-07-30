@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { expenseCategories, incomeCategories } from "@/lib/finance-data";
 import createTransactionsService from "../service/createTransactions";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getCategories from "@/features/categories/hooks/getCategories";
 import getAccounts from "@/features/account/hook/getAccount";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +20,8 @@ interface Props {
 type TxType = "gasto" | "ingreso";
 
 export function TransactionForm({ isOpen, closeForm }: Props) {
-  // const { isOpen, closeForm, addTransaction } = useTransactions();
+  const queryClient = useQueryClient();
+
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: ["category"],
     queryFn: getCategories,
@@ -75,10 +76,14 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
         amount: Number(amount),
         date: new Date(),
         type: "EXPENSE",
-        accountId: "cms7i2eab0005n4drl6d1susq",
-        categoryId: "cms7i2e4y0001n4dr7yvhi0xk",
+        accountId: account,
+        categoryId: category,
         description: name,
       });
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+
       toast.success("Se creo una transacción");
     } catch {
       toast.warning("Hubo un error");
@@ -88,7 +93,10 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
     closeForm();
   }
   const isValid: boolean =
-    amount.length > 0 && account.length > 0 && category.length > 0 && !isLoadingSubmit;
+    amount.length > 0 &&
+    account.length > 0 &&
+    category.length > 0 &&
+    !isLoadingSubmit;
   return (
     <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
       {/* Tipo de movimiento */}

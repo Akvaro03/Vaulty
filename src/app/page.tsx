@@ -1,3 +1,4 @@
+"use client";
 import { RecentTransactions } from "@/features/transactions/components/RecentTransactions";
 import { MoneyEvolutionChart } from "@/features/salary/components/MoneyEvolutionChart";
 import { CategoryChart } from "@/features/categories/components/CategoryChart";
@@ -8,8 +9,15 @@ import { Goals } from "@/features/goals/components/GoalsLineChart";
 import { StatCards } from "@/components/statCards";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+import getDashboard from "@/hooks/getDashboard";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Page() {
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: getDashboard,
+    staleTime: 20,
+  });
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar />
@@ -37,7 +45,7 @@ export default function Page() {
 
             {/* Columna lateral */}
             <div className="flex flex-col gap-5">
-              <RecentTransactions />
+              <RecentTransactions data={dashboard?.transactions} />
               <Goals />
             </div>
           </div>

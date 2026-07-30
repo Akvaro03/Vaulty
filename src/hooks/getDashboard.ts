@@ -1,6 +1,8 @@
-async function getDashboard(): Promise<[]> {
+import { DashboardType } from "@/features/dashboard/type";
+
+async function getDashboard(): Promise<DashboardType> {
   try {
-    const res = await fetch("/dashboard", {
+    const res = await fetch("/api/dashboard", {
       method: "GET",
       headers: { Accept: "application/json" },
     });

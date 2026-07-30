@@ -1,14 +1,7 @@
 import { Category } from "../categories/type/type";
+import { transactionType } from "../transactions/types/type";
 
-export interface Transaction {
-  id: string;
-  date: string;
-  amount: number;
-  categoryId: string;
-  description?: string;
-}
-
-export interface Dashboard {
-  transactions: Transaction[];
+export interface DashboardType {
+  transactions: transactionType[];
   categories: Category[];
 }
