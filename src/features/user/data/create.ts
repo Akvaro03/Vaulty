@@ -39,6 +39,20 @@ async function createUser({ email, name, passwordHash }: CreateUserInput) {
           },
         ],
       },
+      accounts: {
+        createMany: {
+          data: [
+            {
+              name: "Efectivo",
+              type: "CASH",
+            },
+            {
+              name: "Mercado Pago",
+              type: "BANK",
+            },
+          ],
+        },
+      },
     },
   });
 }

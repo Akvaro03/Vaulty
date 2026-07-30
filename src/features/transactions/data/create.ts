@@ -10,7 +10,7 @@ function createTransactions({
   categoryId,
   description,
 }: CreateTransactionInput) {
-  prisma.transaction.create({
+  return prisma.transaction.create({
     data: {
       amount,
       date,

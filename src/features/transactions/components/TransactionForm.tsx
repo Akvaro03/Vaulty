@@ -4,6 +4,9 @@ import { ArrowDownRight, ArrowUpRight, Check } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
 import { expenseCategories, incomeCategories } from "@/lib/finance-data";
+import createTransactionsService from "../service/createTransactions";
+import { toast } from "sonner";
+
 interface Props {
   isOpen: boolean;
   closeForm: () => void;
@@ -54,7 +57,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
     setCategory(next === "gasto" ? expenseCategories[0] : incomeCategories[0]);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const value = Number.parseFloat(amount.replace(",", "."));
     if (!value || value <= 0) {
@@ -63,6 +66,20 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
       return;
     }
     console.log({ name, category, account, amount: value, type });
+    try {
+      await createTransactionsService({
+        userId: "cms7i2dzg0000n4driknx6f3y",
+        amount: Number(amount),
+        date: new Date(),
+        type: "EXPENSE",
+        accountId: "cms7i2eab0005n4drl6d1susq",
+        categoryId: "cms7i2e4y0001n4dr7yvhi0xk",
+        description: name,
+      });
+      toast.success("Se logro iniciar sesión");
+    } catch (error) {
+      toast.warning("No se logro iniciar sesión");
+    }
     closeForm();
   }
 
