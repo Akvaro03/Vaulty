@@ -1,9 +1,10 @@
 "use client";
 
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { user } from "@/lib/finance-data";
 import { TransactionDialog } from "@/features/transactions/components/TransactionDialog";
+import NotificationCenter from "./NotificationCenter";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -40,13 +41,7 @@ export function Topbar() {
           />
         </div>
 
-        <button
-          aria-label="Notificaciones"
-          className="relative flex size-10 items-center justify-center rounded-xl border border-border bg-secondary text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <Bell className="size-[18px]" />
-          <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-primary ring-2 ring-secondary" />
-        </button>
+        <NotificationCenter />
 
         <TransactionDialog />
 

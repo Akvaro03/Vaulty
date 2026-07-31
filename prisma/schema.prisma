@@ -16,6 +16,7 @@ model User {
   accounts     Account[]
   categories   Category[]
   transactions Transaction[]
+  notifications Notification[]
   budgets      Budget[]
   createdAt    DateTime      @default(now())
 
@@ -74,6 +75,33 @@ model RecurringTransaction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String           // Ej: "¡Presupuesto excedido!"
+  message   String           // Ej: "Has superado el 90% de tu presupuesto en Supermercado."
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  link      String?          // URL interna para redirigir al hacer clic (ej: "/dashboard/budgets")
+  
+  createdAt DateTime         @default(now())
+  readAt    DateTime?        // Auditoría: cuándo la abrió el usuario
+
+  // ⚡ ÍNDICE CRÍTICO PARA RENDIMIENTO EN PRODUCCIÓN
+  @@index([userId, isRead])
+}
+
+enum NotificationType {
+  BUDGET_WARNING     // Presupuesto cerca del límite o superado
+  ACTION_PROG     // Presupuesto cerca del límite o superado
+  RECURRING_DUE      // Próximo vencimiento de un gasto fijo o sueldo
+  GOAL_ACHIEVED      // Meta de ahorro alcanzada
+  SYSTEM             // Avisos del sistema / mantenimiento
+}
+
 
 // 2. ACTUALIZAMOS LA TABLA TRANSACTION (Para vincular si vino de un gasto fijo/sueldo)
 model Transaction {
