@@ -13,7 +13,7 @@ import getDashboard from "@/hooks/getDashboard";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Page() {
-  const { data: dashboard } = useQuery({
+  const { data: dashboard, isLoading: isLoadingDashboard } = useQuery({
     queryKey: ["dashboard"],
     queryFn: getDashboard,
     staleTime: 20,
@@ -45,7 +45,10 @@ export default function Page() {
 
             {/* Columna lateral */}
             <div className="flex flex-col gap-5">
-              <RecentTransactions data={dashboard?.transactions} />
+              <RecentTransactions
+                data={dashboard?.transactions}
+                isLoadingData={isLoadingDashboard}
+              />
               <Goals />
             </div>
           </div>
