@@ -13,6 +13,34 @@ export interface DashboardType {
   totalExpense: number;
   budgetProgress: budgetProgress[];
   recurringTransaction: salaryType;
+  historyMonthly: historyMonthly;
+}
+
+export interface historyMonthly {
+  last6Months: {
+    monthKey: string;
+    label: string;
+    income: number;
+    expense: number;
+    netChange: number;
+    accumulatedBalance: number;
+  }[];
+  lastYear: {
+    monthKey: string;
+    label: string;
+    income: number;
+    expense: number;
+    netChange: number;
+    accumulatedBalance: number;
+  }[];
+  last3Years: {
+    monthKey: string;
+    label: string;
+    income: number;
+    expense: number;
+    netChange: number;
+    accumulatedBalance: number;
+  }[];
 }
 
 export interface budgetProgress {
@@ -66,3 +94,4 @@ export interface GlobalBudgetSummary {
   freeBudget: number; // Ej: 1020
   spentBudget: number; // Ej: 3180
 }
+

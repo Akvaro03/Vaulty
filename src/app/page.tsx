@@ -42,7 +42,7 @@ export default function Page() {
               </div>
 
               <StatCards data={dashboard?.metrics} />
-              <MoneyEvolutionChart />
+              <MoneyEvolutionChart history={dashboard?.historyMonthly} />
 
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <CategoryChart />

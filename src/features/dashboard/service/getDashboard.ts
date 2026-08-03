@@ -3,7 +3,7 @@ import getAccountService from "@/features/account/service/getService";
 import getCategoriesService from "@/features/categories/service/getCategories";
 import getTransactionService from "@/features/transactions/service/getTransaction";
 import prisma from "@/lib/prisma";
-import { endOfMonth, startOfMonth, subMonths } from "date-fns";
+import { endOfMonth, format, startOfMonth, subMonths, subYears } from "date-fns";
 
 export async function getDashboardMetrics(
   userId: string,
@@ -25,6 +25,7 @@ export async function getDashboardMetrics(
   const currentYear = date.getFullYear();
   const recurringSummary = await getRecurringSummary(userId);
 
+  const threeYearsAgoDate = startOfMonth(subYears(date, 3));
   // 1. Ejecutar consultas pesadas en paralelo (Promise.all) para máxima velocidad
   const [
     globalTransactions,
@@ -32,6 +33,7 @@ export async function getDashboardMetrics(
     prevMonthTransactions,
     currentMonthExpensesByCategory,
     budgets,
+    monthlyHistoryRaw,
   ] = await Promise.all([
     // A. Saldo Total (Histórico completo)
     prisma.transaction.groupBy({
@@ -76,6 +78,18 @@ export async function getDashboardMetrics(
       where: { userId, month: currentMonth, year: currentYear },
       include: { category: true },
     }),
+    // F. 🚀 NUEVO: Totales mensuales de Ingresos/Gastos de los últimos 3 años (36 meses)
+    prisma.$queryRaw<{ month: Date; type: string; total: number }[]>`
+    SELECT 
+      DATE_TRUNC('month', "date") as month,
+      "type",
+      SUM("amount")::float as total
+    FROM "Transaction"
+    WHERE "userId" = ${userId}
+      AND "date" >= ${threeYearsAgoDate}
+    GROUP BY DATE_TRUNC('month', "date"), "type"
+    ORDER BY month ASC
+  `,
   ]);
   // --- 2. Procesamiento de Resultados ---
   // Cálculo del Saldo Total
@@ -136,7 +150,50 @@ export async function getDashboardMetrics(
     0,
   );
   const monthlySavings = monthlyIncome - monthlyExpense;
+  const monthlyMap = new Map<string, { income: number; expense: number }>();
 
+  monthlyHistoryRaw.forEach((row) => {
+    const monthKey = format(new Date(row.month), "yyyy-MM");
+    const current = monthlyMap.get(monthKey) || { income: 0, expense: 0 };
+
+    if (row.type === "INCOME") current.income += Number(row.total);
+    if (row.type === "EXPENSE") current.expense += Number(row.total);
+
+    monthlyMap.set(monthKey, current);
+  });
+
+  // --- B. Generar el array de los últimos 36 meses continuos ---
+  // Para no dejar "huecos" en meses donde el usuario no tuvo transacciones
+  const last36MonthsHistory = [];
+  let runningBalance = totalBalance; // Partimos del saldo actual calculado en Step 3
+
+  for (let i = 0; i < 36; i++) {
+    const targetDate = subMonths(date, i);
+    const monthKey = format(targetDate, "yyyy-MM");
+    const monthLabel = format(targetDate, "MMM yyyy"); // Ej: "Ago 2026"
+
+    const monthData = monthlyMap.get(monthKey) || { income: 0, expense: 0 };
+    const netChange = monthData.income - monthData.expense;
+
+    last36MonthsHistory.unshift({
+      monthKey,
+      label: monthLabel,
+      income: monthData.income,
+      expense: monthData.expense,
+      netChange,
+      accumulatedBalance: Number(runningBalance.toFixed(2)),
+    });
+
+    // Calculamos el saldo acumulado del mes anterior restando el neto de este mes
+    runningBalance -= netChange;
+  }
+
+  // --- C. Cortar los rangos requeridos para el Frontend ---
+  const historyMonthly = {
+    last6Months: last36MonthsHistory.slice(-6),
+    lastYear: last36MonthsHistory.slice(-12),
+    last3Years: last36MonthsHistory,
+  };
   // Cálculo de Presupuestos Usados (Uniendo datos)
   return {
     metrics: {
@@ -165,6 +222,7 @@ export async function getDashboardMetrics(
         spentBudget: totalBudgetSpent,
       },
     },
+    historyMonthly,
     monthlySavings,
     totalBalance,
     totalIncome,
