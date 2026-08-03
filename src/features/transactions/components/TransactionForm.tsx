@@ -17,7 +17,7 @@ interface Props {
   closeForm: () => void;
 }
 
-type TxType = "gasto" | "ingreso";
+type TxType = "EXPENSE" | "INCOME";
 
 export function TransactionForm({ isOpen, closeForm }: Props) {
   const queryClient = useQueryClient();
@@ -33,7 +33,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
     staleTime: Infinity,
   });
   const [isLoadingSubmit, setIsLoadingSubmit] = useState<boolean>(false);
-  const [type, setType] = useState<TxType>("gasto");
+  const [type, setType] = useState<TxType>("EXPENSE");
   const [amount, setAmount] = useState("");
   const [account, setAccount] = useState("");
   const [category, setCategory] = useState<string>("");
@@ -41,7 +41,6 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const amountRef = useRef<HTMLInputElement>(null);
-  // const categories = type === "gasto" ? expenseCategories : incomeCategories;
 
   // Cierra con la tecla Escape
   useEffect(() => {
@@ -58,7 +57,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
   function selectType(next: TxType) {
     setType(next);
     // Ajusta la categoría por defecto al cambiar de tipo
-    setCategory(next === "gasto" ? expenseCategories[0] : incomeCategories[0]);
+    setCategory(next === "EXPENSE" ? expenseCategories[0] : incomeCategories[0]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -75,7 +74,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
         userId: "cms7i2dzg0000n4driknx6f3y",
         amount: Number(amount),
         date: new Date(),
-        type: "EXPENSE",
+        type: type,
         accountId: account,
         categoryId: category,
         description: name,
@@ -103,8 +102,8 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
       <div className="grid grid-cols-2 gap-2 rounded-xl bg-secondary p-1">
         {(
           [
-            { key: "gasto", label: "Gasto", Icon: ArrowDownRight },
-            { key: "ingreso", label: "Ingreso", Icon: ArrowUpRight },
+            { key: "EXPENSE", label: "Gasto", Icon: ArrowDownRight },
+            { key: "INCOME", label: "Ingreso", Icon: ArrowUpRight },
           ] as const
         ).map(({ key, label, Icon }) => (
           <button
@@ -114,7 +113,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
             className={cn(
               "flex h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-colors",
               type === key
-                ? key === "gasto"
+                ? key === "EXPENSE"
                   ? "bg-primary text-primary-foreground"
                   : "bg-foreground text-background"
                 : "text-muted-foreground hover:text-foreground",
