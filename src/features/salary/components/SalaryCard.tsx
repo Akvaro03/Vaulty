@@ -76,9 +76,9 @@ export function SalaryCard({
         <span className="text-muted-foreground">Próximo pago</span>
 
         <span className="ml-auto font-medium">
-          {new Date(
+          {formatDate(
             recurringTransaction?.summary?.nextPayday || salary.nextPayday,
-          ).toLocaleDateString("es-AR", {})}
+          )}
         </span>
       </div>
 
@@ -105,4 +105,14 @@ export function SalaryCard({
       </ul>
     </div>
   );
+}
+
+export function formatDate(dateString: Date | string) {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
 }
