@@ -18,6 +18,7 @@ export default function Page() {
     queryFn: getDashboard,
     staleTime: 20,
   });
+  // console.log(dashboard);
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar />
@@ -30,16 +31,25 @@ export default function Page() {
             {/* Columna principal */}
             <div className="flex flex-col gap-5 xl:col-span-2">
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                <BalanceCard />
-                <SalaryCard />
+                <BalanceCard
+                  balance={dashboard?.totalBalance}
+                  isLoadingDashboard={isLoadingDashboard}
+                />
+                <SalaryCard
+                  isLoading={isLoadingDashboard}
+                  recurringTransaction={dashboard?.recurringTransaction}
+                />
               </div>
 
-              <StatCards />
+              <StatCards data={dashboard?.metrics} />
               <MoneyEvolutionChart />
 
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <CategoryChart />
-                <Budgets />
+                <Budgets
+                  budgets={dashboard?.budgetProgress || []}
+                  isLoading={isLoadingDashboard}
+                />
               </div>
             </div>
 

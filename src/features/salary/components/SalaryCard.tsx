@@ -1,8 +1,51 @@
-import { CalendarClock } from "lucide-react";
+import { salaryType } from "@/features/dashboard/type";
 import { salary, formatCurrency } from "@/lib/finance-data";
+import { CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export function SalaryCard() {
+export function SalaryCard({
+  recurringTransaction,
+  isLoading = false,
+}: {
+  recurringTransaction?: salaryType;
+  isLoading?: boolean;
+}) {
+  if (isLoading || !recurringTransaction) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+
+        <Skeleton className="mt-4 h-4 w-36" />
+        <Skeleton className="mt-2 h-9 w-44" />
+
+        <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-secondary/60 p-3">
+          <CalendarClock
+            className="size-[18px] text-primary/50"
+            aria-hidden="true"
+          />
+
+          <div className="flex flex-1 items-center justify-between">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+
+        <ul className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <li key={index} className="flex items-center justify-between">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-20" />
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="flex items-center justify-between">
@@ -13,10 +56,15 @@ export function SalaryCard() {
       </div>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        Neto mensual · {salary.employer}
+        Neto mensual ·{" "}
+        {recurringTransaction?.summary &&
+          formatCurrency(recurringTransaction.summary.totalIncome)}
       </p>
+
       <p className="mt-1 text-3xl font-semibold tracking-tight">
-        {formatCurrency(salary.net)}
+        {formatCurrency(
+          recurringTransaction?.summary?.sueldoNeto || salary.net,
+        )}
       </p>
 
       <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-secondary/60 p-3 text-sm">
@@ -24,27 +72,32 @@ export function SalaryCard() {
           className="size-[18px] text-primary"
           aria-hidden="true"
         />
+
         <span className="text-muted-foreground">Próximo pago</span>
-        <span className="ml-auto font-medium">{salary.nextPayday}</span>
+
+        <span className="ml-auto font-medium">
+          {new Date(
+            recurringTransaction?.summary?.nextPayday || salary.nextPayday,
+          ).toLocaleDateString("es-AR", {})}
+        </span>
       </div>
 
       <ul className="mt-4 flex flex-col gap-2.5 border-t border-border pt-4">
-        {salary.breakdown.map((row) => {
-          const negative = row.value < 0;
+        {recurringTransaction?.transactions?.map((row, key) => {
+          const negative = row.type === "EXPENSE";
+
           return (
-            <li
-              key={row.label}
-              className="flex items-center justify-between text-sm"
-            >
-              <span className="text-muted-foreground">{row.label}</span>
+            <li key={key} className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{row.description}</span>
+
               <span
                 className={cn(
                   "font-mono font-medium",
-                  negative && "text-muted-foreground",
+                  !negative ? " text-primary" : "text-muted-foreground",
                 )}
               >
                 {negative ? "-" : ""}
-                {formatCurrency(Math.abs(row.value))}
+                {formatCurrency(Math.abs(row.expectedAmount))}
               </span>
             </li>
           );

@@ -1,7 +1,68 @@
+import { TransactionType } from "@/generated/prisma/enums";
+import { accountType } from "../account/type/type";
 import { Category } from "../categories/type/type";
 import { transactionType } from "../transactions/types/type";
 
 export interface DashboardType {
+  metrics: DashboardMetrics;
   transactions: transactionType[];
   categories: Category[];
+  accounts: accountType[];
+  totalBalance: number;
+  totalIncome: number;
+  totalExpense: number;
+  budgetProgress: budgetProgress[];
+  recurringTransaction: salaryType;
+}
+
+export interface budgetProgress {
+  categoryId: string;
+  categoryName: string;
+  limit: number;
+  spent: number;
+  percentage: number;
+  isOverBudget: boolean;
+}
+
+export interface salaryType {
+  summary: {
+    sueldoNeto: number;
+    totalIncome: number;
+    totalExpense: number;
+    nextPayday: Date;
+  };
+  transactions: recurringTransactionType[];
+}
+
+export interface recurringTransactionType {
+  id: string;
+  userId: string;
+  accountId: string;
+  categoryId: string;
+  description: string;
+  expectedAmount: number;
+  type: TransactionType;
+  frequency: string;
+  dayOfMonth: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+export interface DashboardMetrics {
+  income: MetricCard;
+  expense: MetricCard;
+  savings: MetricCard;
+  budget: GlobalBudgetSummary;
+}
+export interface MetricCard {
+  amount: number;
+  percentageChange: number; // Ej: 12.4 representa +12,4%, -4.1 representa -4,1%
+  periodLabel?: string; // Ej: "Este mes"
+}
+
+export interface GlobalBudgetSummary {
+  percentageUsed: number; // Ej: 76 (%)
+  totalBudget: number; // Ej: 4200
+  freeBudget: number; // Ej: 1020
+  spentBudget: number; // Ej: 3180
 }
