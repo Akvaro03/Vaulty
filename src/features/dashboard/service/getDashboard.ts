@@ -5,6 +5,7 @@ import getAccountService from "@/features/account/service/getService";
 import { APP_TIMEZONE, getLocalMonthBoundaries } from "@/lib/date-utils";
 import { format, subMonths } from "date-fns";
 import prisma from "@/lib/prisma";
+import { formatInTimeZone } from "date-fns-tz";
 
 export async function getDashboardMetrics(
   userId: string,
@@ -238,9 +239,15 @@ function calculateNextPayday(
   dayOfMonth: number,
   referenceDate = new Date(),
 ): Date {
-  const year = referenceDate.getFullYear();
-  const month = referenceDate.getMonth(); // 0 a 11
-  const today = referenceDate.getDate();
+  // 1. Extraemos el año, mes y día EXACTOS de Argentina como texto y luego los pasamos a número.
+  // Esto evita que Vercel (UTC) o Local (UTC-3) usen sus propios relojes al intentar calcular el día.
+  const yearStr = formatInTimeZone(referenceDate, APP_TIMEZONE, "yyyy");
+  const monthStr = formatInTimeZone(referenceDate, APP_TIMEZONE, "MM");
+  const dayStr = formatInTimeZone(referenceDate, APP_TIMEZONE, "dd");
+
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10) - 1; // Restamos 1 porque en JS los meses van de 0 a 11
+  const today = parseInt(dayStr, 10);
 
   let targetYear = year;
   let targetMonth = month;
@@ -254,15 +261,16 @@ function calculateNextPayday(
     }
   }
 
-  // Manejo de días inválidos (ej: día 31 en febrero o abril)
-  const lastDayOfTargetMonth = new Date(
-    targetYear,
-    targetMonth + 1,
-    0,
-  ).getDate();
+  // Manejo de días inválidos usando Date.UTC para que sea inmune al servidor.
+  // Pedir el día '0' del mes siguiente nos devuelve el último día del mes actual.
+  const lastDayOfTargetMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
   const validDay = Math.min(dayOfMonth, lastDayOfTargetMonth);
 
-  return new Date(targetYear, targetMonth, validDay);
+  // 2. 🚀 EL TRUCO DEFINITIVO: Construcción nativa en UTC.
+  // Sabemos que las 00:00 hs de Argentina equivalen a las 03:00 hs de UTC.
+  // Al usar Date.UTC(año, mes, dia, hora, min, seg), Vercel y tu Localhost 
+  // generarán EXACTAMENTE el mismo objeto Date siempre.
+  return new Date(Date.UTC(targetYear, targetMonth, validDay, 3, 0, 0, 0));
 }
 export async function getRecurringSummary(userId: string) {
   // 1. Obtener todas las transacciones recurrentes activas del usuario
