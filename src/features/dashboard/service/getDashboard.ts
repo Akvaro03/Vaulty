@@ -1,9 +1,10 @@
 "use server";
-import getAccountService from "@/features/account/service/getService";
-import getCategoriesService from "@/features/categories/service/getCategories";
 import getTransactionService from "@/features/transactions/service/getTransaction";
+import getCategoriesService from "@/features/categories/service/getCategories";
+import getAccountService from "@/features/account/service/getService";
+import { APP_TIMEZONE, getLocalMonthBoundaries } from "@/lib/date-utils";
+import { format, subMonths } from "date-fns";
 import prisma from "@/lib/prisma";
-import { endOfMonth, format, startOfMonth, subMonths, subYears } from "date-fns";
 
 export async function getDashboardMetrics(
   userId: string,
@@ -12,20 +13,18 @@ export async function getDashboardMetrics(
   const accounts = await getAccountService();
   const categories = await getCategoriesService();
   const transactions = await getTransactionService();
-
+  const {
+    currentMonth,
+    currentMonthEnd,
+    currentMonthStart,
+    currentYear,
+    historyStartDate,
+    prevMonthEnd,
+    prevMonthStart,
+  } = getLocalMonthBoundaries(date);
   // 1. Fechas para el mes actual y el mes anterior
-  const startDate = startOfMonth(date);
-  const endDate = endOfMonth(date);
 
-  const prevMonthDate = subMonths(date, 1);
-  const prevStartDate = startOfMonth(prevMonthDate);
-  const prevEndDate = endOfMonth(prevMonthDate);
-
-  const currentMonth = date.getMonth() + 1;
-  const currentYear = date.getFullYear();
   const recurringSummary = await getRecurringSummary(userId);
-
-  const threeYearsAgoDate = startOfMonth(subYears(date, 3));
   // 1. Ejecutar consultas pesadas en paralelo (Promise.all) para máxima velocidad
   const [
     globalTransactions,
@@ -47,7 +46,7 @@ export async function getDashboardMetrics(
       by: ["type"],
       where: {
         userId,
-        date: { gte: startDate, lte: endDate },
+        date: { gte: currentMonthStart, lte: currentMonthEnd },
       },
       _sum: { amount: true },
     }),
@@ -57,7 +56,7 @@ export async function getDashboardMetrics(
       by: ["type"],
       where: {
         userId,
-        date: { gte: prevStartDate, lte: prevEndDate },
+        date: { gte: prevMonthStart, lte: prevMonthEnd },
       },
       _sum: { amount: true },
     }),
@@ -68,7 +67,7 @@ export async function getDashboardMetrics(
       where: {
         userId,
         type: "EXPENSE",
-        date: { gte: startDate, lte: endDate },
+        date: { gte: currentMonthStart, lte: currentMonthEnd },
       },
       _sum: { amount: true },
     }),
@@ -80,16 +79,18 @@ export async function getDashboardMetrics(
     }),
     // F. 🚀 NUEVO: Totales mensuales de Ingresos/Gastos de los últimos 3 años (36 meses)
     prisma.$queryRaw<{ month: Date; type: string; total: number }[]>`
-    SELECT 
-      DATE_TRUNC('month', "date") as month,
-      "type",
-      SUM("amount")::float as total
-    FROM "Transaction"
-    WHERE "userId" = ${userId}
-      AND "date" >= ${threeYearsAgoDate}
-    GROUP BY DATE_TRUNC('month', "date"), "type"
-    ORDER BY month ASC
-  `,
+      SELECT 
+        DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}) as month,
+        "type",
+        SUM("amount")::float as total
+      FROM "Transaction"
+      WHERE "userId" = ${userId}
+        AND "date" >= ${historyStartDate}
+      GROUP BY 
+        DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}), 
+        "type"
+      ORDER BY month ASC
+    `,
   ]);
   // --- 2. Procesamiento de Resultados ---
   // Cálculo del Saldo Total
