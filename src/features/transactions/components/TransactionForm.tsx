@@ -1,16 +1,15 @@
-import { cn } from "@/lib/utils";
-
-import { ArrowDownRight, ArrowUpRight, Check } from "lucide-react";
-
-import { useEffect, useRef, useState } from "react";
+import CategoryFormPopover from "@/features/categories/components/CategoryFormPopover";
 import { expenseCategories, incomeCategories } from "@/lib/finance-data";
 import createTransactionsService from "../service/createTransactions";
-import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getCategories from "@/features/categories/hooks/getCategories";
+import { ArrowDownRight, ArrowUpRight, Check } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getAccounts from "@/features/account/hook/getAccount";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Props {
   isOpen: boolean;
@@ -33,12 +32,12 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
     staleTime: Infinity,
   });
   const [isLoadingSubmit, setIsLoadingSubmit] = useState<boolean>(false);
-  const [type, setType] = useState<TxType>("EXPENSE");
-  const [amount, setAmount] = useState("");
-  const [account, setAccount] = useState("");
-  const [category, setCategory] = useState<string>("");
-  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [category, setCategory] = useState<string>("");
+  const [type, setType] = useState<TxType>("EXPENSE");
+  const [account, setAccount] = useState("");
+  const [amount, setAmount] = useState("");
+  const [name, setName] = useState("");
 
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -57,7 +56,9 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
   function selectType(next: TxType) {
     setType(next);
     // Ajusta la categoría por defecto al cambiar de tipo
-    setCategory(next === "EXPENSE" ? expenseCategories[0] : incomeCategories[0]);
+    setCategory(
+      next === "EXPENSE" ? expenseCategories[0] : incomeCategories[0],
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -124,7 +125,6 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
           </button>
         ))}
       </div>
-
       {/* Monto */}
       <div>
         <label
@@ -150,7 +150,6 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
         </div>
         {error && <p className="mt-1.5 text-xs text-primary">{error}</p>}
       </div>
-
       {/* Cuenta */}
       <div>
         <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
@@ -182,7 +181,6 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
           )}
         </div>
       </div>
-
       {/* Categoría */}
       <div>
         <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
@@ -217,9 +215,9 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
               );
             })
           )}
+          <CategoryFormPopover />
         </div>
       </div>
-
       {/* Concepto (opcional) */}
       <div>
         <label
@@ -236,7 +234,6 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
           className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary"
         />
       </div>
-
       <div className="mt-1 flex gap-2">
         <button
           type="button"

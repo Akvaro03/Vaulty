@@ -2,6 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { budgetProgress } from "@/features/dashboard/type";
 import { formatCurrency } from "@/lib/finance-data";
 import { cn } from "@/lib/utils";
+import { BudgetDialog } from "./BudgetDialog";
 
 export function Budgets({
   budgets,
@@ -13,6 +14,7 @@ export function Budgets({
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="flex items-center justify-between">
+        <BudgetDialog />
         <h2 className="text-base font-semibold">Presupuestos</h2>
         <button className="text-sm font-medium text-primary transition-opacity hover:opacity-80">
           Gestionar
