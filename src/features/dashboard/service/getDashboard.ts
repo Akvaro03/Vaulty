@@ -79,9 +79,12 @@ export async function getDashboardMetrics(
       include: { category: true },
     }),
     // F. 🚀 NUEVO: Totales mensuales de Ingresos/Gastos de los últimos 3 años (36 meses)
-    prisma.$queryRaw<{ month: Date; type: string; total: number }[]>`
+    prisma.$queryRaw<{ monthKey: string; type: string; total: number }[]>`
       SELECT 
-        DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}) as month,
+        TO_CHAR(
+          DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}), 
+          'YYYY-MM'
+        ) as "monthKey",
         "type",
         SUM("amount")::float as total
       FROM "Transaction"
@@ -153,16 +156,15 @@ export async function getDashboardMetrics(
   const monthlyMap = new Map<string, { income: number; expense: number }>();
 
   monthlyHistoryRaw.forEach((row) => {
-    const monthKey = format(new Date(row.month), "yyyy-MM");
+    // Ya no hacemos new Date(row.month), usamos directamente el string de Postgres
+    const monthKey = row.monthKey;
     const current = monthlyMap.get(monthKey) || { income: 0, expense: 0 };
 
     if (row.type === "INCOME") current.income += Number(row.total);
     if (row.type === "EXPENSE") current.expense += Number(row.total);
 
     monthlyMap.set(monthKey, current);
-  });
-
-  // --- B. Generar el array de los últimos 36 meses continuos ---
+  }); // --- B. Generar el array de los últimos 36 meses continuos ---
   // Para no dejar "huecos" en meses donde el usuario no tuvo transacciones
   const last36MonthsHistory = [];
   let runningBalance = totalBalance; // Partimos del saldo actual calculado en Step 3
@@ -263,12 +265,14 @@ function calculateNextPayday(
 
   // Manejo de días inválidos usando Date.UTC para que sea inmune al servidor.
   // Pedir el día '0' del mes siguiente nos devuelve el último día del mes actual.
-  const lastDayOfTargetMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const lastDayOfTargetMonth = new Date(
+    Date.UTC(targetYear, targetMonth + 1, 0),
+  ).getUTCDate();
   const validDay = Math.min(dayOfMonth, lastDayOfTargetMonth);
 
   // 2. 🚀 EL TRUCO DEFINITIVO: Construcción nativa en UTC.
   // Sabemos que las 00:00 hs de Argentina equivalen a las 03:00 hs de UTC.
-  // Al usar Date.UTC(año, mes, dia, hora, min, seg), Vercel y tu Localhost 
+  // Al usar Date.UTC(año, mes, dia, hora, min, seg), Vercel y tu Localhost
   // generarán EXACTAMENTE el mismo objeto Date siempre.
   return new Date(Date.UTC(targetYear, targetMonth, validDay, 3, 0, 0, 0));
 }
