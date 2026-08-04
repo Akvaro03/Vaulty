@@ -86,10 +86,8 @@ export async function getDashboardMetrics(
       FROM "Transaction"
       WHERE "userId" = ${userId}
         AND "date" >= ${historyStartDate}
-      GROUP BY 
-        DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}), 
-        "type"
-      ORDER BY month ASC
+      GROUP BY 1, 2
+      ORDER BY 1 ASC
     `,
   ]);
   // --- 2. Procesamiento de Resultados ---
