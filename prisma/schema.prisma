@@ -9,18 +9,37 @@ datasource db {
 
 // 1. USUARIOS Y AUTENTICACIÓN
 model User {
-  id           String        @id @default(cuid()) // Mejor que integer
-  email        String        @unique
-  password     String        @unique
-  name         String?
-  accounts     Account[]
-  categories   Category[]
-  transactions Transaction[]
+  id            String         @id @default(cuid()) // Mejor que integer
+  email         String         @unique
+  password      String         @unique
+  name          String?
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
   notifications Notification[]
-  budgets      Budget[]
-  createdAt    DateTime      @default(now())
+  budgets       Budget[]
+  createdAt     DateTime       @default(now())
 
   recurringTransactions RecurringTransaction[]
+  sessions              Session[]
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  token String @unique
+
+  expiresAt DateTime
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  userAgent String?
+
+  ip String?
 }
 
 // 2. CUENTAS (Bancos, Tarjetas, Efectivo) -> ¡Nueva y vital!
@@ -77,31 +96,30 @@ model RecurringTransaction {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title     String           // Ej: "¡Presupuesto excedido!"
-  message   String           // Ej: "Has superado el 90% de tu presupuesto en Supermercado."
-  type      NotificationType
-  isRead    Boolean          @default(false)
-  link      String?          // URL interna para redirigir al hacer clic (ej: "/dashboard/budgets")
-  
-  createdAt DateTime         @default(now())
-  readAt    DateTime?        // Auditoría: cuándo la abrió el usuario
+  title   String // Ej: "¡Presupuesto excedido!"
+  message String // Ej: "Has superado el 90% de tu presupuesto en Supermercado."
+  type    NotificationType
+  isRead  Boolean          @default(false)
+  link    String? // URL interna para redirigir al hacer clic (ej: "/dashboard/budgets")
+
+  createdAt DateTime  @default(now())
+  readAt    DateTime? // Auditoría: cuándo la abrió el usuario
 
   // ⚡ ÍNDICE CRÍTICO PARA RENDIMIENTO EN PRODUCCIÓN
   @@index([userId, isRead])
 }
 
 enum NotificationType {
-  BUDGET_WARNING     // Presupuesto cerca del límite o superado
-  ACTION_PROG     // Presupuesto cerca del límite o superado
-  RECURRING_DUE      // Próximo vencimiento de un gasto fijo o sueldo
-  GOAL_ACHIEVED      // Meta de ahorro alcanzada
-  SYSTEM             // Avisos del sistema / mantenimiento
+  BUDGET_WARNING // Presupuesto cerca del límite o superado
+  ACTION_PROG // Presupuesto cerca del límite o superado
+  RECURRING_DUE // Próximo vencimiento de un gasto fijo o sueldo
+  GOAL_ACHIEVED // Meta de ahorro alcanzada
+  SYSTEM // Avisos del sistema / mantenimiento
 }
-
 
 // 2. ACTUALIZAMOS LA TABLA TRANSACTION (Para vincular si vino de un gasto fijo/sueldo)
 model Transaction {

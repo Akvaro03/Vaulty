@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Mail, Lock, Loader2 } from "lucide-react";
-import { AuthField } from "./AuthField";
 import loginService from "../service/auth.service";
+import { Mail, Lock, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AuthField } from "./AuthField";
+import { useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -32,9 +34,11 @@ export function LoginForm() {
     setLoading(true);
     try {
       await loginService({ email, password });
-      toast.success("Se logro iniciar sesión")
+      router.replace("/login");
+
+      toast.success("Se logro iniciar sesión");
     } catch {
-      toast.warning("No se logro iniciar sesión")
+      toast.warning("No se logro iniciar sesión");
     }
     setLoading(false);
   }

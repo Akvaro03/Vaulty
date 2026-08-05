@@ -11,13 +11,28 @@ import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import getDashboard from "@/hooks/getDashboard";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { UnauthorizedError } from "@/features/auth/types/authType";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
-  const { data: dashboard, isLoading: isLoadingDashboard } = useQuery({
+  const router = useRouter();
+
+  const {
+    data: dashboard,
+    isLoading: isLoadingDashboard,
+    error: queryError,
+  } = useQuery({
     queryKey: ["dashboard"],
     queryFn: getDashboard,
     staleTime: 20,
   });
+  useEffect(() => {
+    if (queryError instanceof UnauthorizedError) {
+      router.replace("/login");
+    }
+  }, [queryError, router]);
+
   // console.log(dashboard);
   return (
     <div className="flex min-h-screen bg-background text-foreground">

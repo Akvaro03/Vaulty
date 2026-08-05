@@ -6,11 +6,22 @@ import { APP_TIMEZONE, getLocalMonthBoundaries } from "@/lib/date-utils";
 import { format, subMonths } from "date-fns";
 import prisma from "@/lib/prisma";
 import { formatInTimeZone } from "date-fns-tz";
+import getCurrentUser from "@/features/auth/service/getCurrentUser";
+import invalidateSession from "@/features/auth/service/invalidateSession";
+import { UnauthorizedError } from "@/features/auth/types/authType";
 
-export async function getDashboardMetrics(
-  userId: string,
-  date: Date = new Date(),
-) {
+export async function getDashboardMetrics(date: Date = new Date()) {
+  const auth = await getCurrentUser();
+  if (!auth.authenticated) {
+    if (
+      auth.reason === "SESSION_EXPIRED" ||
+      auth.reason === "SESSION_NOT_FOUND"
+    ) {
+      await invalidateSession();
+    }
+    throw new UnauthorizedError();
+  }
+  const userId = auth.user.id;
   const accounts = await getAccountService();
   const categories = await getCategoriesService();
   const transactions = await getTransactionService();

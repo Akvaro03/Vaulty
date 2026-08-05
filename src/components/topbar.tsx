@@ -1,10 +1,10 @@
 "use client";
 
-import { Search } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { user } from "@/lib/finance-data";
 import { TransactionDialog } from "@/features/transactions/components/TransactionDialog";
+import UserDropdown from "@/features/user/component/userDropdown";
 import NotificationCenter from "./NotificationCenter";
+import { user } from "@/lib/finance-data";
+import { Search } from "lucide-react";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -44,12 +44,7 @@ export function Topbar() {
         <NotificationCenter />
 
         <TransactionDialog />
-
-        <Avatar className="size-10 border border-border">
-          <AvatarFallback className="bg-secondary text-sm font-medium text-foreground">
-            {user.initials}
-          </AvatarFallback>
-        </Avatar>
+        <UserDropdown />
       </div>
     </header>
   );
