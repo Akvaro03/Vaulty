@@ -31,7 +31,6 @@ async function loginService({ email, password }: loginInput) {
     sameSite: "lax",
     expires: expiresAt.getTime(),
     path: "/",
-    domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
   });
 }
 export async function logoutService() {
