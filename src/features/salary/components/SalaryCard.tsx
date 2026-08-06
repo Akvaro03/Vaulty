@@ -45,7 +45,6 @@ export function SalaryCard({
     );
   }
   const summary = recurringTransaction.summary;
-  console.log(summary)
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="flex items-center justify-between">
