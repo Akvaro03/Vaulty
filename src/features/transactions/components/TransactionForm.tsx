@@ -71,7 +71,6 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
     }
     try {
       await createTransactionsService({
-        userId: "cms7i2dzg0000n4driknx6f3y",
         amount: Number(amount),
         date: new Date(),
         type: type,

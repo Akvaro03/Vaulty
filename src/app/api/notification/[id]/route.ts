@@ -11,7 +11,7 @@ export async function GET(
     return new NextResponse(null, { status: 400 });
   }
 
-  await markAsReadService(pidParam, "cms7i2dzg0000n4driknx6f3y");
+  await markAsReadService(pidParam);
   return NextResponse.json({
     success: true,
   });

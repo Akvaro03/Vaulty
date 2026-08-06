@@ -1,8 +1,6 @@
 import { z } from "zod";
 
 export const createTransactionSchema = z.object({
-  userId: z.string().cuid(),
-
   accountId: z.string().cuid(),
 
   categoryId: z.string().cuid().nullable().optional(),
