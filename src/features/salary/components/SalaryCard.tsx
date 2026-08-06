@@ -1,5 +1,4 @@
 import { salaryType } from "@/features/dashboard/type";
-import { salary, formatCurrency } from "@/lib/finance-data";
 import { CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,26 +44,23 @@ export function SalaryCard({
       </div>
     );
   }
-
+  const summary = recurringTransaction.summary;
+  console.log(summary)
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Sueldo</h2>
         <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          {salary.frequency}
+          {"Mensual"}
         </span>
       </div>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        Neto mensual ·{" "}
-        {recurringTransaction?.summary &&
-          formatCurrency(recurringTransaction.summary.totalIncome)}
+        Neto mensual · {summary && formatCurrency(summary.totalIncome)}
       </p>
 
       <p className="mt-1 text-3xl font-semibold tracking-tight">
-        {formatCurrency(
-          recurringTransaction?.summary?.sueldoNeto || salary.net,
-        )}
+        {formatCurrency(summary?.sueldoNeto)}
       </p>
 
       <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-secondary/60 p-3 text-sm">
@@ -76,9 +72,7 @@ export function SalaryCard({
         <span className="text-muted-foreground">Próximo pago</span>
 
         <span className="ml-auto font-medium">
-          {formatDate(
-            recurringTransaction?.summary?.nextPayday || salary.nextPayday,
-          )}
+          {summary?.nextPayday ? formatDate(summary?.nextPayday) : ""}
         </span>
       </div>
 
@@ -116,3 +110,11 @@ export function formatDate(dateString: Date | string) {
     year: "numeric",
   }).format(date);
 }
+
+export const formatCurrency = (value: number, opts?: { decimals?: boolean }) =>
+  new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: opts?.decimals ? 2 : 0,
+    maximumFractionDigits: opts?.decimals ? 2 : 0,
+  }).format(value);

@@ -57,8 +57,6 @@ function TransactionsSkeletonList({ rows = 4 }: { rows?: number }) {
 }
 
 export function RecentTransactions({ data, isLoadingData }: PropsRecent) {
-  // Si no vienen datos por prop, usa los datos mock como respaldo
-
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="flex items-center justify-between">
@@ -73,7 +71,8 @@ export function RecentTransactions({ data, isLoadingData }: PropsRecent) {
           <TransactionsSkeletonList rows={4} />
         ) : (
           data?.map((t) => {
-            const categoryName = typeof t.category === "object" ? t.category.name : t.category;
+            const categoryName =
+              typeof t.category === "object" ? t.category.name : t.category;
             const Icon = iconFor[categoryName] ?? Banknote;
             const isIncome = t.type === "INCOME";
 
