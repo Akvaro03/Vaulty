@@ -1,29 +1,57 @@
 import CategoryFormPopover from "@/features/categories/components/CategoryFormPopover";
+import { toast } from "sonner";
 import { DialogClose } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { useRef, useState } from "react";
 import getCategories from "@/features/categories/hooks/getCategories";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import createBudgetService from "../service/createBudget";
+import { Button } from "@/components/ui/button";
 function BudgetForm() {
+  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: ["category"],
     queryFn: getCategories,
     staleTime: Infinity,
   });
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log(categorySelected);
-  };
   const [categorySelected, setCategorySelected] = useState(categories?.[0]);
   const [limit, setLimit] = useState("");
   const [error, setError] = useState<string | null>(null);
   const limitRef = useRef<HTMLInputElement>(null);
 
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    if (!categorySelected) {
+      setError("El nombre es obligatorio");
+      return;
+    }
+
+    try {
+      await createBudgetService({
+        amount: Number(limit),
+        categoryId: categorySelected.id,
+        month: 1,
+        year: 1,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+
+      toast.success("Categoría creada");
+
+      close?.();
+    } catch {
+      toast.error("Hubo un error al crear la categoría");
+    }
+    setIsLoading(false);
+  };
+  const isValid = categorySelected && limit.length > 0 && !isLoading;
   return (
-    <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
+    <form className="mt-4 flex flex-col gap-4">
       {/* Categoría */}
       <div>
         <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
@@ -58,7 +86,7 @@ function BudgetForm() {
               );
             })
           )}
-          <CategoryFormPopover type="EXPENSE"/>
+          <CategoryFormPopover type="EXPENSE" />
         </div>
       </div>
 
@@ -99,12 +127,13 @@ function BudgetForm() {
             </button>
           }
         />
-        <button
-          type="submit"
+        <Button
+          onClick={handleSubmit}
+          disabled={!isValid}
           className="h-11 flex-[1.5] rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
           Guardar presupuesto
-        </button>
+        </Button>
       </div>
     </form>
   );
