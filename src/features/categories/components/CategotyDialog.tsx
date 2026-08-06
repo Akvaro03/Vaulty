@@ -36,7 +36,7 @@ export function CategoryDialog({
           <DialogTitle>Nueva categoría</DialogTitle>
         </DialogHeader>
 
-        <CategoryForm />
+        <CategoryForm type="EXPENSE"/>
       </DialogContent>
     </Dialog>
   );

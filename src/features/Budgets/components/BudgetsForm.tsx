@@ -58,7 +58,7 @@ function BudgetForm() {
               );
             })
           )}
-          <CategoryFormPopover />
+          <CategoryFormPopover type="EXPENSE"/>
         </div>
       </div>
 
