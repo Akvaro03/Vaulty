@@ -1,15 +1,19 @@
 import prisma from "@/lib/prisma";
 import { CreateTransactionInput } from "../types/schemaTransactions";
 
+type CreateTransactionParams = CreateTransactionInput & {
+  userId: string;
+};
+
 function createTransactions({
   accountId,
   amount,
   date,
   type,
-  userId,
   categoryId,
   description,
-}: CreateTransactionInput) {
+  userId,
+}: CreateTransactionParams) {
   return prisma.transaction.create({
     data: {
       amount,

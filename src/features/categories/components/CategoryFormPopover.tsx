@@ -1,18 +1,26 @@
+
+import CategoryForm from "@/features/categories/components/CategoryForm";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { VariantProps } from "class-variance-authority";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import CategoryForm from "@/features/categories/components/CategoryForm";
-import { VariantProps } from "class-variance-authority";
-import { Plus } from "lucide-react";
 interface CategoryDialogProps {
   buttonVariant?: VariantProps<typeof buttonVariants>["variant"];
+  type: "INCOME" | "EXPENSE";
 }
-function CategoryFormPopover({ buttonVariant = "default" }: CategoryDialogProps) {
+function CategoryFormPopover({
+  buttonVariant = "default",
+  type,
+}: CategoryDialogProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
           <Button
@@ -25,18 +33,7 @@ function CategoryFormPopover({ buttonVariant = "default" }: CategoryDialogProps)
         }
       />
       <PopoverContent className="w-64" align="center">
-        {/* <PopoverHeader>
-          <PopoverTitle>Dimensions</PopoverTitle>
-          <PopoverDescription>
-            Set the dimensions for the layer.
-          </PopoverDescription>
-        </PopoverHeader>
-        <div className="grid grid-cols-3 items-center gap-4">
-          <label htmlFor="width">Width</label>
-          <Input id="width" defaultValue="100%" className="col-span-2 h-8" />
-
-        </div> */}
-        <CategoryForm />
+        <CategoryForm type={type} close={() => setOpen(false)} />
       </PopoverContent>
     </Popover>
   );

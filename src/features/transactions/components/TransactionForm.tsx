@@ -213,7 +213,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
               );
             })
           )}
-          <CategoryFormPopover />
+          <CategoryFormPopover type={"EXPENSE"} />
         </div>
       </div>
       {/* Concepto (opcional) */}
