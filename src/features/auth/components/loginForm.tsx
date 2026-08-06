@@ -34,11 +34,11 @@ export function LoginForm() {
     setLoading(true);
     try {
       await loginService({ email, password });
-      router.replace("/login");
+      router.replace("/");
 
-      toast.success("Se logro iniciar sesión");
+      toast.success("Se logro crear sesión");
     } catch {
-      toast.warning("No se logro iniciar sesión");
+      toast.warning("No se logro crear sesión");
     }
     setLoading(false);
   }

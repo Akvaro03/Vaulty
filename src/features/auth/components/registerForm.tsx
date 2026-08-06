@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { registerService } from "../service/auth.service";
 import { User, Mail, Lock, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { AuthField } from "./AuthField";
 import { cn } from "@/lib/utils";
-import createUser from "@/features/user/data/create";
+import { useState } from "react";
+import { toast } from "sonner";
+import Link from "next/link";
 
 function passwordStrength(pw: string) {
   let score = 0;
@@ -19,6 +21,7 @@ function passwordStrength(pw: string) {
 const strengthLabels = ["Muy débil", "Débil", "Aceptable", "Buena", "Fuerte"];
 
 export function RegisterForm() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,8 +53,15 @@ export function RegisterForm() {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    const res = await createUser({ email, name, passwordHash: password });
-    console.log(res);
+    try {
+      await registerService({ email, name, passwordHash: password });
+      router.replace("/");
+
+      toast.success("Se logro iniciar sesión");
+    } catch {
+      toast.warning("No se logro iniciar sesión");
+    }
+    setLoading(false);
   }
 
   return (

@@ -8,6 +8,8 @@ import argon2 from "argon2";
 import crypto from "crypto";
 import getCurrentUser from "./getCurrentUser";
 import invalidateSession from "./invalidateSession";
+import createUser from "../../user/data/create";
+import { CreateUserInput } from "@/features/user/types/schemaUser";
 
 async function loginService({ email, password }: loginInput) {
   const user = await findUserByEmail(email);
@@ -24,6 +26,28 @@ async function loginService({ email, password }: loginInput) {
     userId: user.id,
   });
 
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: "session",
+    value: token,
+    sameSite: "lax",
+    expires: expiresAt.getTime(),
+    path: "/",
+  });
+}
+export async function registerService(data: CreateUserInput) {
+  const user = await createUser(data);
+
+  const token = crypto.randomBytes(64).toString("hex");
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 días
+  console.log(user);
+  const sesion = await createSessionDb({
+    token,
+    expiresAt,
+    userId: user.id,
+  });
+  console.log(sesion);
+  console.log(token);
   const cookieStore = await cookies();
   cookieStore.set({
     name: "session",

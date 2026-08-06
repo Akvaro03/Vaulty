@@ -25,7 +25,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
     queryKey: ["category"],
     queryFn: getCategories,
     staleTime: Infinity,
-  });
+  }); 
   const { data: accounts, isLoading: isLoadingAccount } = useQuery({
     queryKey: ["account"],
     queryFn: getAccounts,
@@ -52,7 +52,6 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
   }, [isOpen, closeForm]);
 
   if (!isOpen) return null;
-  console.log(categories);
   function selectType(next: TxType) {
     setType(next);
     // Ajusta la categoría por defecto al cambiar de tipo
