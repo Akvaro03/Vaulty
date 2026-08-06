@@ -15,27 +15,27 @@ async function createUser({ email, name, passwordHash }: CreateUserInput) {
         create: [
           {
             color: "#155512",
-            icon: "ArrowDown",
-            name: "Vivienda",
-            type: "EXPENSE",
-          },
-          {
-            color: "#cb0909",
-            icon: "ArrowDown",
+            icon: "Home",
             name: "Vivienda",
             type: "EXPENSE",
           },
           {
             color: "#553112",
-            icon: "ArrowDown",
-            name: "Vivienda",
+            icon: "Music",
+            name: "Ocio",
+            type: "EXPENSE",
+          },
+          {
+            color: "#cb0909",
+            icon: "ShoppingCart",
+            name: "Alimentación",
             type: "EXPENSE",
           },
           {
             color: "#ff6a00",
             icon: "ArrowDown",
-            name: "Vivienda",
-            type: "EXPENSE",
+            name: "Sueldo",
+            type: "INCOME",
           },
         ],
       },

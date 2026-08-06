@@ -52,7 +52,7 @@ export function TransactionForm({ isOpen, closeForm }: Props) {
   }, [isOpen, closeForm]);
 
   if (!isOpen) return null;
-
+  console.log(categories);
   function selectType(next: TxType) {
     setType(next);
     // Ajusta la categoría por defecto al cambiar de tipo
