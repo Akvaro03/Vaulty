@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import createBudgetService from "../service/createBudget";
 import { Button } from "@/components/ui/button";
+import { getLocalMonthBoundaries } from "@/lib/date-utils";
 function BudgetForm() {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -21,7 +22,7 @@ function BudgetForm() {
   const [limit, setLimit] = useState("");
   const [error, setError] = useState<string | null>(null);
   const limitRef = useRef<HTMLInputElement>(null);
-
+  const { currentMonth, currentYear } = getLocalMonthBoundaries();
   const handleSubmit = async () => {
     setIsLoading(true);
     if (!categorySelected) {
@@ -33,8 +34,8 @@ function BudgetForm() {
       await createBudgetService({
         amount: Number(limit),
         categoryId: categorySelected.id,
-        month: 1,
-        year: 1,
+        month: currentMonth,
+        year: currentYear,
       });
 
       queryClient.invalidateQueries({
