@@ -1,17 +1,18 @@
-import { ArrowUpRight, Eye } from "lucide-react";
-import { summary, formatCurrency } from "@/lib/finance-data";
+import { ArrowUpRight, ArrowDownRight, Eye } from "lucide-react";
+import { formatCurrency } from "@/lib/finance-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function BalanceCard({
   balance,
+  prevBalance,
   isLoadingDashboard,
 }: {
   balance: number | undefined;
+  prevBalance: number | undefined;
   isLoadingDashboard: boolean;
 }) {
-  const diff = summary.totalBalance - summary.lastYearBalance;
-  const pct = (diff / summary.lastYearBalance) * 100;
-
+  const diff = balance && prevBalance ? balance - prevBalance : 0;
+  const pct = prevBalance ? (diff / prevBalance) * 100 : 0;
   return (
     <section className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground md:p-7">
       {/* decorative dotted grid */}
@@ -51,13 +52,34 @@ export function BalanceCard({
             <Skeleton className="h-5 w-48 bg-primary-foreground/20" />
           </>
         )}
-        <span className="inline-flex items-center gap-1 rounded-full bg-primary-foreground/15 px-2.5 py-1 text-sm font-semibold">
-          <ArrowUpRight className="size-4" />
-          {pct.toFixed(1)}%
-        </span>
-        <span className="text-sm text-primary-foreground/80">
-          {formatCurrency(diff)} más que el año pasado
-        </span>
+        {pct !== 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary-foreground/15 px-2.5 py-1 text-sm font-semibold">
+            {pct > 0 ? (
+              <>
+                <ArrowUpRight className="size-4" />
+                {pct.toFixed(1) + "%"}
+              </>
+            ) : (
+              <>
+                <ArrowDownRight className="size-4" />
+                {Math.abs(pct).toFixed(1) + "%"}
+              </>
+            )}
+          </span>
+        )}
+        {diff !== 0 && (
+          <>
+            {pct > 0 ? (
+              <span className="text-sm text-primary-foreground/80">
+                {formatCurrency(diff)} más que el año pasado
+              </span>
+            ) : (
+              <span className="text-sm text-primary-foreground/80">
+                {formatCurrency(diff)} menos que el año pasado
+              </span>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

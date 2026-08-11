@@ -9,6 +9,7 @@ export interface DashboardType {
   categories: Category[];
   accounts: accountType[];
   totalBalance: number;
+  totalPrevBalance: number;
   totalIncome: number;
   totalExpense: number;
   budgetProgress: budgetProgress[];

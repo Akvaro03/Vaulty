@@ -48,6 +48,7 @@ export default function Page() {
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <BalanceCard
                   balance={dashboard?.totalBalance}
+                  prevBalance={dashboard?.totalPrevBalance}
                   isLoadingDashboard={isLoadingDashboard}
                 />
                 <SalaryCard

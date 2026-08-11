@@ -33,13 +33,18 @@ export async function getDashboardMetrics(date: Date = new Date()) {
     historyStartDate,
     prevMonthEnd,
     prevMonthStart,
+    currentDate,
   } = getLocalMonthBoundaries(date);
   // 1. Fechas para el mes actual y el mes anterior
 
   const recurringSummary = await getRecurringSummary(userId);
   // 1. Ejecutar consultas pesadas en paralelo (Promise.all) para máxima velocidad
+  const previousMonthDate = new Date(currentDate);
+  previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+
   const [
     globalTransactions,
+    prevGlobalTransactions,
     currentMonthTransactions,
     prevMonthTransactions,
     currentMonthExpensesByCategory,
@@ -50,6 +55,16 @@ export async function getDashboardMetrics(date: Date = new Date()) {
     prisma.transaction.groupBy({
       by: ["type"],
       where: { userId },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.groupBy({
+      by: ["type"],
+      where: {
+        userId,
+        date: {
+          lte: previousMonthDate,
+        },
+      },
       _sum: { amount: true },
     }),
 
@@ -117,6 +132,10 @@ export async function getDashboardMetrics(date: Date = new Date()) {
   const totalIncome = getAmount(globalTransactions, "INCOME");
   const totalExpense = getAmount(globalTransactions, "EXPENSE");
   const totalBalance = totalIncome - totalExpense; // Cálculo de Ahorro del Mes
+  // Totales Globales mes pasado (Para balance de la app)
+  const totalPrevIncome = getAmount(prevGlobalTransactions, "INCOME");
+  const totalPrevExpense = getAmount(prevGlobalTransactions, "EXPENSE");
+  const totalPrevBalance = totalPrevIncome - totalPrevExpense; // Cálculo de Ahorro del Mes
   // Totales Mes Actual
   const currentIncome = getAmount(currentMonthTransactions, "INCOME");
   const currentExpense = getAmount(currentMonthTransactions, "EXPENSE");
@@ -237,6 +256,7 @@ export async function getDashboardMetrics(date: Date = new Date()) {
     },
     historyMonthly,
     monthlySavings,
+    totalPrevBalance,
     totalBalance,
     totalIncome,
     totalExpense,
