@@ -80,22 +80,27 @@ model RecurringTransaction {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
-  description    String // Ej: "Sueldo Empresa X", "Internet Fibra", "Alquiler"
-  expectedAmount Decimal         @db.Decimal(12, 2) // Monto estimado/base
-  type           TransactionType // INCOME (Sueldo) o EXPENSE (Gasto Fijo)
+  description    String
+  expectedAmount Decimal         @db.Decimal(12, 2)
+  type           TransactionType
 
   frequency Frequency @default(MONTHLY)
 
   dayOfWeek  DayOfWeek?
   dayOfMonth Int?
+  time       String?
 
-  isActive Boolean @default(true) // Permite pausar una suscripción/servicio sin borrarla
+  nextRunAt DateTime?
+  lastRunAt DateTime?
 
-  // Historial de transacciones reales que se crearon desde esta plantilla
+  isActive Boolean @default(true)
+
   transactions Transaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([isActive, nextRunAt])
 }
 
 model Notification {

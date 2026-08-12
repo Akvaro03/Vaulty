@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { CreateRecurringTransactionInput } from "../types/schemaRecurringTransaction";
+import { calculateNextRunStart } from "../hooks/calculateNextRun";
 
 type CreateRecurringTransactionParams = CreateRecurringTransactionInput & {
   userId: string;
@@ -17,6 +18,7 @@ function createRecurringTransaction({
   userId,
   type,
 }: CreateRecurringTransactionParams) {
+  const nextRunAt = calculateNextRunStart(frequency, dayOfWeek, dayOfMonth);
   return prisma.recurringTransaction.create({
     data: {
       expectedAmount,
@@ -25,6 +27,8 @@ function createRecurringTransaction({
       dayOfMonth,
       accountId,
       frequency,
+      lastRunAt: null,
+      nextRunAt,
       dayOfWeek,
       isActive,
       userId,

@@ -1,4 +1,4 @@
-import { Frequency } from "@/generated/prisma/enums";
+import { DayOfWeek, Frequency } from "@/generated/prisma/enums";
 import { z } from "zod";
 
 export const createRecurringTransactionSchema = z.object({
@@ -19,15 +19,7 @@ export const createRecurringTransactionSchema = z.object({
   frequency: z.nativeEnum(Frequency),
 
   dayOfWeek: z
-    .enum([
-      "MONDAY",
-      "TUESDAY",
-      "WEDNESDAY",
-      "THURSDAY",
-      "FRIDAY",
-      "SATURDAY",
-      "SUNDAY",
-    ])
+    .nativeEnum(DayOfWeek)
     .nullable()
     .optional(),
 
