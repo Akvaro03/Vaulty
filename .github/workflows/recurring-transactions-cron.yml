@@ -1,0 +1,25 @@
+name: Process Recurring Transactions
+
+on:
+  push:
+    branches:
+      - main
+
+  schedule:
+    - cron: "*/5 * * * *"
+
+  workflow_dispatch:
+
+jobs:
+  process-recurring-transactions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test
+        run: echo "GitHub Action ejecutada correctamente Test"
+
+      - name: Call API
+        run: |
+          curl --fail-with-body -X POST \
+            "https://vaultytest.vercel.app/api/cron/recurring-transactions" \
+            -H "Authorization: Bearer asdasddas"
