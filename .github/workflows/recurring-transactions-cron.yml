@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
-
   schedule:
-    - cron: "*/5 * * * *"
-
+    - cron: "*/10 * * * *" # Ajustado a 10 min según tu requerimiento original
   workflow_dispatch:
 
 jobs:
