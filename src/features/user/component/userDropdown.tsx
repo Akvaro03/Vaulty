@@ -20,7 +20,7 @@ function UserDropdown() {
       router.replace("/login");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
-    }
+    } 
   };
   return (
     <DropdownMenu>

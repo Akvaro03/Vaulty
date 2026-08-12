@@ -84,9 +84,12 @@ model RecurringTransaction {
   expectedAmount Decimal         @db.Decimal(12, 2) // Monto estimado/base
   type           TransactionType // INCOME (Sueldo) o EXPENSE (Gasto Fijo)
 
-  frequency  Frequency @default(MONTHLY)
-  dayOfMonth Int // Día programado (1 al 31)
-  isActive   Boolean   @default(true) // Permite pausar una suscripción/servicio sin borrarla
+  frequency Frequency @default(MONTHLY)
+
+  dayOfWeek  DayOfWeek?
+  dayOfMonth Int?
+
+  isActive Boolean @default(true) // Permite pausar una suscripción/servicio sin borrarla
 
   // Historial de transacciones reales que se crearon desde esta plantilla
   transactions Transaction[]
@@ -175,5 +178,14 @@ enum Frequency {
   DAILY
   WEEKLY
   MONTHLY
-  YEARLY
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }

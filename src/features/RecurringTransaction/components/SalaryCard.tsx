@@ -2,6 +2,7 @@ import { salaryType } from "@/features/dashboard/type";
 import { CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RecurringTransactionDialog } from "@/features/transactions/components/RecurringTransactionDialog";
 
 export function SalaryCard({
   recurringTransaction,
@@ -95,6 +96,9 @@ export function SalaryCard({
             </li>
           );
         })}
+        <li>
+          <RecurringTransactionDialog />
+        </li>
       </ul>
     </div>
   );

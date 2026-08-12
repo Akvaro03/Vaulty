@@ -1,9 +1,9 @@
 "use client";
 import { RecentTransactions } from "@/features/transactions/components/RecentTransactions";
-import { MoneyEvolutionChart } from "@/features/salary/components/MoneyEvolutionChart";
+import { MoneyEvolutionChart } from "@/features/RecurringTransaction/components/MoneyEvolutionChart";
 import { CategoryChart } from "@/features/categories/components/CategoryChart";
 import { Budgets } from "@/features/Budgets/components/BudgetsLineChart";
-import { SalaryCard } from "@/features/salary/components/SalaryCard";
+import { SalaryCard } from "@/features/RecurringTransaction/components/SalaryCard";
 import { BalanceCard } from "@/features/user/component/BalanceCard";
 import { Goals } from "@/features/goals/components/GoalsLineChart";
 import { StatCards } from "@/components/statCards";

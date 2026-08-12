@@ -9,6 +9,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import getCurrentUser from "@/features/auth/service/getCurrentUser";
 import invalidateSession from "@/features/auth/service/invalidateSession";
 import { UnauthorizedError } from "@/features/auth/types/authType";
+import { DayOfWeek, Frequency } from "@/generated/prisma/enums";
 
 export async function getDashboardMetrics(date: Date = new Date()) {
   const auth = await getCurrentUser();
@@ -269,43 +270,133 @@ export async function getDashboardMetrics(date: Date = new Date()) {
 }
 
 function calculateNextPayday(
-  dayOfMonth: number,
-  referenceDate = new Date(),
+  frequency: Frequency,
+  day: number | string | null,
 ): Date {
-  // 1. Extraemos el año, mes y día EXACTOS de Argentina como texto y luego los pasamos a número.
-  // Esto evita que Vercel (UTC) o Local (UTC-3) usen sus propios relojes al intentar calcular el día.
-  const yearStr = formatInTimeZone(referenceDate, APP_TIMEZONE, "yyyy");
-  const monthStr = formatInTimeZone(referenceDate, APP_TIMEZONE, "MM");
-  const dayStr = formatInTimeZone(referenceDate, APP_TIMEZONE, "dd");
+  const { currentDate: referenceDate } = getLocalMonthBoundaries();
 
-  const year = parseInt(yearStr, 10);
-  const month = parseInt(monthStr, 10) - 1; // Restamos 1 porque en JS los meses van de 0 a 11
-  const today = parseInt(dayStr, 10);
+  const year = Number(formatInTimeZone(referenceDate, APP_TIMEZONE, "yyyy"));
 
-  let targetYear = year;
-  let targetMonth = month;
+  const month = Number(formatInTimeZone(referenceDate, APP_TIMEZONE, "MM")) - 1;
 
-  // Si hoy es posterior al día programado, el próximo pago es el mes que viene
-  if (today > dayOfMonth) {
-    targetMonth += 1;
-    if (targetMonth > 11) {
-      targetMonth = 0;
-      targetYear += 1;
-    }
+  const today = Number(formatInTimeZone(referenceDate, APP_TIMEZONE, "dd"));
+
+  /*
+   * DAILY
+   *
+   * Una transacción diaria siempre se ejecuta mañana.
+   */
+  if (frequency === "DAILY") {
+    return new Date(Date.UTC(year, month, today + 1, 3, 0, 0, 0));
   }
 
-  // Manejo de días inválidos usando Date.UTC para que sea inmune al servidor.
-  // Pedir el día '0' del mes siguiente nos devuelve el último día del mes actual.
-  const lastDayOfTargetMonth = new Date(
-    Date.UTC(targetYear, targetMonth + 1, 0),
-  ).getUTCDate();
-  const validDay = Math.min(dayOfMonth, lastDayOfTargetMonth);
+  /*
+   * WEEKLY
+   *
+   * day debe ser algo como:
+   * "MONDAY"
+   * "TUESDAY"
+   * "WEDNESDAY"
+   */
+  if (frequency === "WEEKLY") {
+    if (!day) {
+      throw new Error("El día de la semana es requerido");
+    }
 
-  // 2. 🚀 EL TRUCO DEFINITIVO: Construcción nativa en UTC.
-  // Sabemos que las 00:00 hs de Argentina equivalen a las 03:00 hs de UTC.
-  // Al usar Date.UTC(año, mes, dia, hora, min, seg), Vercel y tu Localhost
-  // generarán EXACTAMENTE el mismo objeto Date siempre.
-  return new Date(Date.UTC(targetYear, targetMonth, validDay, 3, 0, 0, 0));
+    const targetDay = WEEK_DAYS[day as DayOfWeek];
+
+    if (targetDay === undefined) {
+      throw new Error(`Día de la semana inválido: ${day}`);
+    }
+
+    // 0 = domingo, 1 = lunes, ..., 6 = sábado
+    const currentDayOfWeek =
+      Number(formatInTimeZone(referenceDate, APP_TIMEZONE, "i")) % 7;
+
+    let daysUntilTarget = (targetDay - currentDayOfWeek + 7) % 7;
+
+    /*
+     * Si es el mismo día de la semana, consideramos
+     * que el próximo pago es la semana siguiente.
+     *
+     * Ejemplo:
+     *
+     * Hoy = martes
+     * day = TUESDAY
+     *
+     * Próximo pago = martes de la semana siguiente.
+     */
+    if (daysUntilTarget === 0) {
+      daysUntilTarget = 7;
+    }
+
+    return new Date(Date.UTC(year, month, today + daysUntilTarget, 3, 0, 0, 0));
+  }
+
+  /*
+   * MONTHLY
+   *
+   * day debe ser un número:
+   *
+   * 4
+   * 5
+   * 10
+   * 14
+   * etc.
+   */
+  if (frequency === "MONTHLY") {
+    if (day === null) {
+      throw new Error("El día del mes es requerido");
+    }
+
+    const targetDay = Number(day);
+
+    if (!Number.isInteger(targetDay) || targetDay < 1 || targetDay > 31) {
+      throw new Error(`Día del mes inválido: ${day}`);
+    }
+
+    let targetYear = year;
+    let targetMonth = month;
+
+    /*
+     * Si el día ya pasó, vamos al próximo mes.
+     *
+     * Ejemplo:
+     *
+     * Hoy = 12
+     * day = 10
+     *
+     * Próximo pago = día 10 del mes siguiente.
+     */
+    if (today >= targetDay) {
+      targetMonth += 1;
+
+      if (targetMonth > 11) {
+        targetMonth = 0;
+        targetYear += 1;
+      }
+    }
+
+    /*
+     * Evitamos fechas inválidas.
+     *
+     * Por ejemplo:
+     *
+     * day = 31
+     * próximo mes = febrero
+     *
+     * → usamos el último día de febrero.
+     */
+    const lastDayOfTargetMonth = new Date(
+      Date.UTC(targetYear, targetMonth + 1, 0),
+    ).getUTCDate();
+
+    const validDay = Math.min(targetDay, lastDayOfTargetMonth);
+
+    return new Date(Date.UTC(targetYear, targetMonth, validDay, 3, 0, 0, 0));
+  }
+
+  throw new Error(`Frecuencia inválida: ${frequency}`);
 }
 export async function getRecurringSummary(userId: string) {
   // 1. Obtener todas las transacciones recurrentes activas del usuario
@@ -330,8 +421,10 @@ export async function getRecurringSummary(userId: string) {
   // 2. Mapear y calcular los totales
   const formattedTransactions = recurringTransactions.map((item) => {
     const amount = Number(item.expectedAmount); // Convertir Decimal a Number
-    const nextPayday = calculateNextPayday(item.dayOfMonth);
-
+    const nextPayday = calculateNextPayday(
+      item.frequency,
+      item.frequency === "WEEKLY" ? item.dayOfWeek : item.dayOfMonth,
+    );
     if (item.type === "INCOME") {
       totalIncome += amount;
 
@@ -363,3 +456,13 @@ export async function getRecurringSummary(userId: string) {
     transactions: formattedTransactions,
   };
 }
+
+const WEEK_DAYS: Record<DayOfWeek, number> = {
+  SUNDAY: 0,
+  MONDAY: 1,
+  TUESDAY: 2,
+  WEDNESDAY: 3,
+  THURSDAY: 4,
+  FRIDAY: 5,
+  SATURDAY: 6,
+};
