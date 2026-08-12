@@ -11,23 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Call API
-        run: |
-          curl -X POST "https://vaultytest.vercel.app/api/cron/recurring-transactions" \
-            -H "Authorization: Bearer asdasddas"
-
-on:
-  workflow_dispatch:
-
-jobs:
-  process-recurring-transactions:
-    runs-on: ubuntu-latest
-
-    steps:
       - name: Test
         run: echo "GitHub Action ejecutada correctamente"
 
       - name: Call API
         run: |
-          curl -X POST "${{ secrets.RECURRING_TRANSACTIONS_URL }}" \
+          curl --fail-with-body -X POST \
+            "https://vaultytest.vercel.app/api/cron/recurring-transactions" \
             -H "Authorization: Bearer asdasddas"
