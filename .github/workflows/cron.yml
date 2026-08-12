@@ -1,0 +1,14 @@
+name: Trigger Recurring Transactions Cron
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Se ejecuta cada 10 minutos
+  workflow_dispatch: # Permite ejecutar el flujo manualmente desde GitHub
+
+jobs:
+  ping-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make GET Request
+        run: |
+          curl -X GET "https://vaultytest.vercel.app/api/cron/recurring-transactions" --fail
