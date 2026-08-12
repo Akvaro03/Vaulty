@@ -20,6 +20,6 @@ jobs:
 
       - name: Call API
         run: |
-          curl --fail-with-body -X POST \
+          curl --fail-with-body -X GET \
             "https://vaultytest.vercel.app/api/cron/recurring-transactions" \
             -H "Authorization: Bearer asdasddas"
