@@ -1,0 +1,17 @@
+name: Process Recurring Transactions
+
+on:
+  schedule:
+    - cron: "* * * * *"
+
+  workflow_dispatch:
+
+jobs:
+  process-recurring-transactions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call API
+        run: |
+          curl -X POST "${{ secrets.RECURRING_TRANSACTIONS_URL }}" \
+            -H "Authorization: Bearer asdasddas"
