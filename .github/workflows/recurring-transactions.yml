@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Test
-        run: echo "GitHub Action ejecutada correctamente"
+        run: echo "GitHub Action ejecutada correctamente Test"
 
       - name: Call API
         run: |
