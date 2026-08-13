@@ -2,15 +2,15 @@ export const user = {
   name: "Martín",
   fullName: "Martín Herrera",
   initials: "MH",
-}
+};
 
 export const formatCurrency = (value: number, opts?: { decimals?: boolean }) =>
-  new Intl.NumberFormat("es-ES", {
+  new Intl.NumberFormat("es-AR", {
     style: "currency",
-    currency: "EUR",
+    currency: "ARS",
     minimumFractionDigits: opts?.decimals ? 2 : 0,
     maximumFractionDigits: opts?.decimals ? 2 : 0,
-  }).format(value)
+  }).format(value);
 
 export const summary = {
   totalBalance: 48250.75,
@@ -20,7 +20,7 @@ export const summary = {
   savings: 1850,
   budgetTotal: 4200,
   budgetUsed: 3180.5,
-}
+};
 
 // Evolución del dinero — saldo mensual este año vs el año pasado
 export const moneyEvolution = [
@@ -36,7 +36,7 @@ export const moneyEvolution = [
   { month: "Oct", actual: 47300, anterior: 38350 },
   { month: "Nov", actual: 47900, anterior: 38700 },
   { month: "Dic", actual: 48250, anterior: 39120 },
-]
+];
 
 // Gastos por categoría
 export const spendingByCategory = [
@@ -46,41 +46,90 @@ export const spendingByCategory = [
   { category: "Ocio", value: 460, key: "ocio" },
   { category: "Salud", value: 290, key: "salud" },
   { category: "Otros", value: 160.5, key: "otros" },
-]
+];
 
 export type Transaction = {
-  id: string
-  name: string
-  category: string
-  account?: string
-  date: string
-  amount: number
-  type: "ingreso" | "gasto"
-}
+  id: string;
+  name: string;
+  category: string;
+  account?: string;
+  date: string;
+  amount: number;
+  type: "ingreso" | "gasto";
+};
 
 export const recentTransactions: Transaction[] = [
-  { id: "1", name: "Nómina — Ferrán Studio", category: "Salario", date: "28 Jul", amount: 3200, type: "ingreso" },
-  { id: "2", name: "Alquiler apartamento", category: "Vivienda", date: "27 Jul", amount: -1250, type: "gasto" },
-  { id: "3", name: "Mercadona", category: "Alimentación", date: "26 Jul", amount: -86.42, type: "gasto" },
-  { id: "4", name: "Spotify Premium", category: "Ocio", date: "25 Jul", amount: -10.99, type: "gasto" },
-  { id: "5", name: "Freelance — diseño web", category: "Extra", date: "24 Jul", amount: 620, type: "ingreso" },
-  { id: "6", name: "Gasolinera Repsol", category: "Transporte", date: "23 Jul", amount: -62.3, type: "gasto" },
-  { id: "7", name: "Farmacia Central", category: "Salud", date: "22 Jul", amount: -34.5, type: "gasto" },
-]
+  {
+    id: "1",
+    name: "Nómina — Ferrán Studio",
+    category: "Salario",
+    date: "28 Jul",
+    amount: 3200,
+    type: "ingreso",
+  },
+  {
+    id: "2",
+    name: "Alquiler apartamento",
+    category: "Vivienda",
+    date: "27 Jul",
+    amount: -1250,
+    type: "gasto",
+  },
+  {
+    id: "3",
+    name: "Mercadona",
+    category: "Alimentación",
+    date: "26 Jul",
+    amount: -86.42,
+    type: "gasto",
+  },
+  {
+    id: "4",
+    name: "Spotify Premium",
+    category: "Ocio",
+    date: "25 Jul",
+    amount: -10.99,
+    type: "gasto",
+  },
+  {
+    id: "5",
+    name: "Freelance — diseño web",
+    category: "Extra",
+    date: "24 Jul",
+    amount: 620,
+    type: "ingreso",
+  },
+  {
+    id: "6",
+    name: "Gasolinera Repsol",
+    category: "Transporte",
+    date: "23 Jul",
+    amount: -62.3,
+    type: "gasto",
+  },
+  {
+    id: "7",
+    name: "Farmacia Central",
+    category: "Salud",
+    date: "22 Jul",
+    amount: -34.5,
+    type: "gasto",
+  },
+];
 
 // Cuentas disponibles para asignar a una transacción
 export type Account = {
-  id: string
-  name: string
-  detail: string
-}
+  id: string;
+  name: string;
+  detail: string;
+};
 
 export const accounts: Account[] = [
   { id: "principal", name: "Cuenta principal", detail: "•••• 4021" },
   { id: "ahorro", name: "Cuenta de ahorro", detail: "•••• 8830" },
   { id: "tarjeta", name: "Tarjeta de crédito", detail: "•••• 1195" },
   { id: "efectivo", name: "Efectivo", detail: "Cartera" },
-]
+];
 
 // Categorías separadas por tipo de movimiento
 export const expenseCategories = [
@@ -90,36 +139,46 @@ export const expenseCategories = [
   "Ocio",
   "Salud",
   "Otros",
-] as const
+] as const;
 
-export const incomeCategories = ["Salario", "Extra", "Inversión", "Otros"] as const
+export const incomeCategories = [
+  "Salario",
+  "Extra",
+  "Inversión",
+  "Otros",
+] as const;
 
 export type Budget = {
-  category: string
-  spent: number
-  limit: number
-  key: string
-}
+  category: string;
+  spent: number;
+  limit: number;
+  key: string;
+};
 
 export const budgets: Budget[] = [
   { category: "Vivienda", spent: 1250, limit: 1300, key: "vivienda" },
   { category: "Alimentación", spent: 640, limit: 700, key: "alimentacion" },
   { category: "Transporte", spent: 380, limit: 350, key: "transporte" },
   { category: "Ocio", spent: 460, limit: 500, key: "ocio" },
-]
+];
 
 export type Goal = {
-  name: string
-  saved: number
-  target: number
-  deadline: string
-}
+  name: string;
+  saved: number;
+  target: number;
+  deadline: string;
+};
 
 export const goals: Goal[] = [
-  { name: "Fondo de emergencia", saved: 8400, target: 12000, deadline: "Dic 2026" },
+  {
+    name: "Fondo de emergencia",
+    saved: 8400,
+    target: 12000,
+    deadline: "Dic 2026",
+  },
   { name: "Viaje a Japón", saved: 2650, target: 5000, deadline: "May 2027" },
   { name: "Coche nuevo", saved: 6100, target: 18000, deadline: "Ene 2028" },
-]
+];
 
 export const salary = {
   net: 3200,
@@ -132,4 +191,4 @@ export const salary = {
     { label: "IRPF", value: -640 },
     { label: "Seguridad Social", value: -260 },
   ],
-}
+};
