@@ -1,13 +1,15 @@
-import getCurrentUser from "@/features/auth/service/getCurrentUser";
-import getAllCategoriesDb from "../data/get";
+"use server"
 
-async function getCategoriesService() {
+import getCurrentUser from "@/features/auth/service/getCurrentUser";
+import { markAllAsRead } from "../data/markAllAsRead";
+
+async function markAllAsReadService() {
   const auth = await getCurrentUser();
   if (!auth.authenticated) {
     throw new Error("User not authenticated");
   }
 
-  return getAllCategoriesDb({ userId: auth.session.userId });
+  return markAllAsRead(auth.session.userId);
 }
 
-export default getCategoriesService;
+export default markAllAsReadService;

@@ -40,6 +40,10 @@ model Session {
   userAgent String?
 
   ip String?
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // 2. CUENTAS (Bancos, Tarjetas, Efectivo) -> ¡Nueva y vital!
@@ -47,11 +51,13 @@ model Account {
   id           String        @id @default(cuid())
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String // Ej: "Caja de Ahorro Santander"
-  type         AccountType // Enum: BANK, CREDIT, CASH
+  name         String
+  type         AccountType
   transactions Transaction[]
 
   recurringTransactions RecurringTransaction[]
+
+  @@index([userId, type])
 }
 
 // 3. CATEGORÍAS (Con UI helpers)
@@ -59,14 +65,16 @@ model Category {
   id           String          @id @default(cuid())
   userId       String
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String // Ej: "Supermercado"
-  type         TransactionType // Enum: INCOME, EXPENSE
-  icon         String // Ej: "shopping-cart"
-  color        String // Ej: "#10b981"
+  name         String
+  type         TransactionType
+  icon         String
+  color        String
   transactions Transaction[]
   budgets      Budget[]
 
   recurringTransactions RecurringTransaction[]
+
+  @@index([userId, type])
 }
 
 model RecurringTransaction {
@@ -101,6 +109,9 @@ model RecurringTransaction {
   updatedAt DateTime @updatedAt
 
   @@index([isActive, nextRunAt])
+  @@index([userId])
+  @@index([accountId])
+  @@index([categoryId])
 }
 
 model Notification {
@@ -141,17 +152,23 @@ model Transaction {
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
 
-  // Opcional: Si este gasto/ingreso derivó de una recurrencia programada
   recurringTransactionId String?
   recurringTransaction   RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id])
 
-  amount      Decimal         @db.Decimal(12, 2) // El monto REAL cobrado/gastado
-  type        TransactionType // INCOME, EXPENSE, TRANSFER
+  amount      Decimal         @db.Decimal(12, 2)
+  type        TransactionType
   description String?
-  date        DateTime // Fecha exacta en que se registró
+  date        DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, type, date])
+  @@index([userId, categoryId, date])
+  @@index([accountId, date])
+  @@index([categoryId, date])
+  @@index([recurringTransactionId])
 }
 
 // 5. PRESUPUESTOS (Atados a categoría y tiempo)
@@ -165,6 +182,8 @@ model Budget {
   amount Decimal @db.Decimal(12, 2)
   month  Int // 1-12
   year   Int // Ej: 2026
+
+  @@unique([userId, categoryId, year, month])
 }
 
 enum TransactionType {

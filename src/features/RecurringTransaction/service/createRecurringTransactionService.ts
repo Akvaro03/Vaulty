@@ -15,7 +15,7 @@ async function createRecurringTransactionService(
 
   try {
     await createNotificationService({
-      userId: auth.user.id,
+      userId: auth.session.userId,
       createdAt: new Date(),
       type: "ACTION_PROG",
       message: "Se agrego una nueva actividad recurrente",
@@ -25,7 +25,7 @@ async function createRecurringTransactionService(
     });
     await createRecurringTransaction({
       ...data,
-      userId: auth.user.id,
+      userId: auth.session.userId,
     });
   } catch (error) {
     console.log(error);

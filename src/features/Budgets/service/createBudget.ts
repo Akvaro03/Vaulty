@@ -13,7 +13,7 @@ async function createBudgetService(data: CreateBudgetInput) {
   }
   try {
     await createNotificationService({
-      userId: auth.user.id,
+      userId: auth.session.userId,
       createdAt: new Date(),
       type: "ACTION_PROG",
       message: "Se agrego un nuevo movimiento",
@@ -23,7 +23,7 @@ async function createBudgetService(data: CreateBudgetInput) {
     });
     await createBudget({
       ...data,
-      userId: auth.user.id,
+      userId: auth.session.userId,
     });
   } catch (error) {
     console.log(error);

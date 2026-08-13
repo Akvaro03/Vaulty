@@ -5,10 +5,6 @@ async function getSessionDb(token: string) {
     where: {
       token,
     },
-
-    include: {
-      user: true,
-    },
   });
 }
 

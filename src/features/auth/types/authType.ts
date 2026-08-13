@@ -1,9 +1,9 @@
-import { User } from "@/generated/prisma/client";
+import { Session, User } from "@/generated/prisma/client";
 
 export type AuthResult =
   | {
       authenticated: true;
-      user: User;
+      session: Session;
     }
   | {
       authenticated: false;

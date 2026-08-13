@@ -7,7 +7,7 @@ async function markAsReadService(notificationId: string) {
     throw new Error("User not authenticated");
   }
 
-  return markAsRead(notificationId, auth.user.id);
+  return markAsRead(notificationId, auth.session.userId);
 }
 
 export default markAsReadService;

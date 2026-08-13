@@ -13,7 +13,7 @@ async function createCategoryService(data: CreateCategoryInput) {
   try {
     await createCategoryDb({
       ...data,
-      userId: auth.user.id,
+      userId: auth.session.userId,
     });
   } catch (error) {
     console.log(error);

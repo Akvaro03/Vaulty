@@ -13,7 +13,7 @@ async function createTransactionsService(data: CreateTransactionInput) {
   try {
     await createTransactions({
       ...data,
-      userId: auth.user.id,
+      userId: auth.session.userId,
     });
   } catch (error) {
     console.log(error);

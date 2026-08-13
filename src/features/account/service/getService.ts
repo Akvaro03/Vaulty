@@ -7,7 +7,7 @@ async function getAccountService() {
     throw new Error("User not authenticated");
   }
 
-  return getAllAccountsDb({ userId: auth.user.id });
+  return getAllAccountsDb({ userId: auth.session.userId });
 }
 
 export default getAccountService;

@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { UnauthorizedError } from "@/features/auth/types/authType";
 import { useRouter } from "next/navigation";
+import getDashboardHistory from "@/hooks/getDashboardHistory";
 
 export default function Page() {
   const router = useRouter();
@@ -25,6 +26,15 @@ export default function Page() {
   } = useQuery({
     queryKey: ["dashboard"],
     queryFn: getDashboard,
+    staleTime: 20,
+  });
+  const {
+    data: dashboardTest,
+    isLoading: isLoadingDashboardTest,
+    error: queryErrorTest,
+  } = useQuery({
+    queryKey: ["dashboardTest"],
+    queryFn: getDashboardHistory,
     staleTime: 20,
   });
   useEffect(() => {
@@ -58,7 +68,7 @@ export default function Page() {
               </div>
 
               <StatCards data={dashboard?.metrics} />
-              <MoneyEvolutionChart history={dashboard?.historyMonthly} />
+              <MoneyEvolutionChart history={dashboardTest?.historyMonthly} />
 
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <CategoryChart />

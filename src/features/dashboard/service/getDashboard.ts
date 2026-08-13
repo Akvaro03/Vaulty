@@ -10,8 +10,14 @@ import getCurrentUser from "@/features/auth/service/getCurrentUser";
 import invalidateSession from "@/features/auth/service/invalidateSession";
 import { UnauthorizedError } from "@/features/auth/types/authType";
 import { DayOfWeek, Frequency } from "@/generated/prisma/enums";
+import getAllAccountsDb from "@/features/account/data/get";
+import getAllCategoriesDb from "@/features/categories/data/get";
+import getAllTransactionsDb from "@/features/transactions/data/get";
 
 export async function getDashboardMetrics(date: Date = new Date()) {
+  const totalStart = performance.now();
+  let start = performance.now();
+
   const auth = await getCurrentUser();
   if (!auth.authenticated) {
     if (
@@ -22,54 +28,59 @@ export async function getDashboardMetrics(date: Date = new Date()) {
     }
     throw new UnauthorizedError();
   }
-  const userId = auth.user.id;
-  const accounts = await getAccountService();
-  const categories = await getCategoriesService();
-  const transactions = await getTransactionService();
+  const userId = auth.session.userId;
+  // console.log(`[Dashboard] Auth: ${(performance.now() - start).toFixed(2)}ms`);
+  start = performance.now();
+
   const {
     currentMonth,
     currentMonthEnd,
     currentMonthStart,
     currentYear,
-    historyStartDate,
     prevMonthEnd,
     prevMonthStart,
-    currentDate,
   } = getLocalMonthBoundaries(date);
-  // 1. Fechas para el mes actual y el mes anterior
+  // console.log(
+  //   `[Dashboard] Local Time: ${(performance.now() - start).toFixed(2)}ms`,
+  // );
 
-  const recurringSummary = await getRecurringSummary(userId);
-  // 1. Ejecutar consultas pesadas en paralelo (Promise.all) para máxima velocidad
-  const previousMonthDate = new Date(currentDate);
-  previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
-
+  start = performance.now();
+  // 🚀 TODO EN PARALELO: Únicamente consultas livianas e indexadas
   const [
+    accounts,
+    categories,
+    recentTransactions,
+    recurringSummary,
     globalTransactions,
     prevGlobalTransactions,
     currentMonthTransactions,
     prevMonthTransactions,
     currentMonthExpensesByCategory,
     budgets,
-    monthlyHistoryRaw,
   ] = await Promise.all([
-    // A. Saldo Total (Histórico completo)
+    getAllAccountsDb({ userId }),
+    getAllCategoriesDb({ userId }),
+    getAllTransactionsDb({ userId, limit: 10 }), // 💡 Recuerda agregar limit/take en este servicio
+    getRecurringSummary(userId),
+
+    // A. Saldo Total Histórico (acumulado hasta la fecha)
     prisma.transaction.groupBy({
       by: ["type"],
       where: { userId },
       _sum: { amount: true },
     }),
+
+    // B. Saldo acumulado al cierre del mes anterior
     prisma.transaction.groupBy({
       by: ["type"],
       where: {
         userId,
-        date: {
-          lte: previousMonthDate,
-        },
+        date: { lte: prevMonthEnd },
       },
       _sum: { amount: true },
     }),
 
-    // B. Ingresos y Gastos totales (Mes Actual)
+    // C. Ingresos y Gastos del Mes Actual
     prisma.transaction.groupBy({
       by: ["type"],
       where: {
@@ -79,7 +90,7 @@ export async function getDashboardMetrics(date: Date = new Date()) {
       _sum: { amount: true },
     }),
 
-    // C. Ingresos y Gastos totales (Mes Anterior - Para el porcentaje)
+    // D. Ingresos y Gastos del Mes Anterior (para cálculo de % de variación)
     prisma.transaction.groupBy({
       by: ["type"],
       where: {
@@ -89,7 +100,7 @@ export async function getDashboardMetrics(date: Date = new Date()) {
       _sum: { amount: true },
     }),
 
-    // D. Gastos por categoría (Mes Actual - Solo para los presupuestos)
+    // E. Gastos por categoría del mes actual (para los presupuestos)
     prisma.transaction.groupBy({
       by: ["categoryId"],
       where: {
@@ -100,43 +111,19 @@ export async function getDashboardMetrics(date: Date = new Date()) {
       _sum: { amount: true },
     }),
 
-    // E. Presupuestos asignados para el mes actual
+    // F. Presupuestos del mes
     prisma.budget.findMany({
       where: { userId, month: currentMonth, year: currentYear },
       include: { category: true },
     }),
-    // F. 🚀 NUEVO: Totales mensuales de Ingresos/Gastos de los últimos 3 años (36 meses)
-    prisma.$queryRaw<{ monthKey: string; type: string; total: number }[]>`
-      SELECT 
-        TO_CHAR(
-          DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}), 
-          'YYYY-MM'
-        ) as "monthKey",
-        "type",
-        SUM("amount")::float as total
-      FROM "Transaction"
-      WHERE "userId" = ${userId}
-        AND "date" >= ${historyStartDate}
-      GROUP BY 1, 2
-      ORDER BY 1 ASC
-    `,
   ]);
-  // --- 2. Procesamiento de Resultados ---
-  // Cálculo del Saldo Total
-  type TransactionGroupByResult = {
-    type: string;
-    _sum: { amount?: { toNumber: () => number } | null };
-  };
-  const getAmount = (arr: TransactionGroupByResult[], type: string) =>
-    arr.find((t) => t.type === type)?._sum.amount?.toNumber() || 0;
-  // Totales Globales (Para balance de la app)
-  const totalIncome = getAmount(globalTransactions, "INCOME");
-  const totalExpense = getAmount(globalTransactions, "EXPENSE");
-  const totalBalance = totalIncome - totalExpense; // Cálculo de Ahorro del Mes
-  // Totales Globales mes pasado (Para balance de la app)
-  const totalPrevIncome = getAmount(prevGlobalTransactions, "INCOME");
-  const totalPrevExpense = getAmount(prevGlobalTransactions, "EXPENSE");
-  const totalPrevBalance = totalPrevIncome - totalPrevExpense; // Cálculo de Ahorro del Mes
+
+  // console.log(
+  //   `[Dashboard] Peticiones en paralelo: ${(performance.now() - start).toFixed(2)}ms`,
+  // );
+
+  // --- CÁLCULOS Y PROCESAMIENTO ---
+  start = performance.now();
   // Totales Mes Actual
   const currentIncome = getAmount(currentMonthTransactions, "INCOME");
   const currentExpense = getAmount(currentMonthTransactions, "EXPENSE");
@@ -146,6 +133,17 @@ export async function getDashboardMetrics(date: Date = new Date()) {
   const prevIncome = getAmount(prevMonthTransactions, "INCOME");
   const prevExpense = getAmount(prevMonthTransactions, "EXPENSE");
   const prevSavings = prevIncome - prevExpense;
+
+  // Totales Globales
+  const totalIncome = getAmount(globalTransactions, "INCOME");
+  const totalExpense = getAmount(globalTransactions, "EXPENSE");
+  const totalBalance = totalIncome - totalExpense;
+
+  const totalPrevIncome = getAmount(prevGlobalTransactions, "INCOME");
+  const totalPrevExpense = getAmount(prevGlobalTransactions, "EXPENSE");
+  const totalPrevBalance = totalPrevIncome - totalPrevExpense;
+
+  // Cálculo de Presupuestos
   let totalBudgetLimit = 0;
   let totalBudgetSpent = 0;
   const budgetProgress = budgets.map((budget) => {
@@ -167,67 +165,21 @@ export async function getDashboardMetrics(date: Date = new Date()) {
       isOverBudget: spentAmount > budgetLimit,
     };
   });
-  // Función para calcular porcentaje de cambio
+
   const calculateChange = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
-    // Usamos Math.abs en el denominador para manejar correctamente ahorros negativos previos
     return Number(
       (((current - previous) / Math.abs(previous)) * 100).toFixed(1),
     );
   };
 
-  // (Asumiendo que hiciste una query extra similar para los ingresos del mes, o lo filtras del monthlyTransactions si quitas el type: 'EXPENSE')
-  // Para mantener el ejemplo simple, supongamos que lo obtuvimos:
-  const monthlyIncome = totalIncome | 0;
-  const monthlyExpense = currentMonthTransactions.reduce(
-    (acc, curr) => acc + (curr._sum.amount?.toNumber() || 0),
-    0,
-  );
-  const monthlySavings = monthlyIncome - monthlyExpense;
-  const monthlyMap = new Map<string, { income: number; expense: number }>();
+  // console.log(
+  //   `[Dashboard] Total de cálculos: ${(performance.now() - start).toFixed(2)}ms`,
+  // );
+  // console.log(
+  //   `[Dashboard] TOTAL: ${(performance.now() - totalStart).toFixed(2)}ms`,
+  // );
 
-  monthlyHistoryRaw.forEach((row) => {
-    // Ya no hacemos new Date(row.month), usamos directamente el string de Postgres
-    const monthKey = row.monthKey;
-    const current = monthlyMap.get(monthKey) || { income: 0, expense: 0 };
-
-    if (row.type === "INCOME") current.income += Number(row.total);
-    if (row.type === "EXPENSE") current.expense += Number(row.total);
-
-    monthlyMap.set(monthKey, current);
-  }); // --- B. Generar el array de los últimos 36 meses continuos ---
-  // Para no dejar "huecos" en meses donde el usuario no tuvo transacciones
-  const last36MonthsHistory = [];
-  let runningBalance = totalBalance; // Partimos del saldo actual calculado en Step 3
-
-  for (let i = 0; i < 36; i++) {
-    const targetDate = subMonths(date, i);
-    const monthKey = format(targetDate, "yyyy-MM");
-    const monthLabel = format(targetDate, "MMM yyyy"); // Ej: "Ago 2026"
-
-    const monthData = monthlyMap.get(monthKey) || { income: 0, expense: 0 };
-    const netChange = monthData.income - monthData.expense;
-
-    last36MonthsHistory.unshift({
-      monthKey,
-      label: monthLabel,
-      income: monthData.income,
-      expense: monthData.expense,
-      netChange,
-      accumulatedBalance: Number(runningBalance.toFixed(2)),
-    });
-
-    // Calculamos el saldo acumulado del mes anterior restando el neto de este mes
-    runningBalance -= netChange;
-  }
-
-  // --- C. Cortar los rangos requeridos para el Frontend ---
-  const historyMonthly = {
-    last6Months: last36MonthsHistory.slice(-6),
-    lastYear: last36MonthsHistory.slice(-12),
-    last3Years: last36MonthsHistory,
-  };
-  // Cálculo de Presupuestos Usados (Uniendo datos)
   return {
     metrics: {
       income: {
@@ -255,20 +207,18 @@ export async function getDashboardMetrics(date: Date = new Date()) {
         spentBudget: totalBudgetSpent,
       },
     },
-    historyMonthly,
-    monthlySavings,
+    monthlySavings: currentSavings,
     totalPrevBalance,
     totalBalance,
     totalIncome,
     totalExpense,
     recurringTransaction: recurringSummary,
     budgetProgress,
-    transactions,
+    transactions: recentTransactions,
     categories,
     accounts,
   };
 }
-
 function calculateNextPayday(
   frequency: Frequency,
   day: number | string | null,
@@ -280,24 +230,9 @@ function calculateNextPayday(
   const month = Number(formatInTimeZone(referenceDate, APP_TIMEZONE, "MM")) - 1;
 
   const today = Number(formatInTimeZone(referenceDate, APP_TIMEZONE, "dd"));
-
-  /*
-   * DAILY
-   *
-   * Una transacción diaria siempre se ejecuta mañana.
-   */
   if (frequency === "DAILY") {
     return new Date(Date.UTC(year, month, today + 1, 3, 0, 0, 0));
   }
-
-  /*
-   * WEEKLY
-   *
-   * day debe ser algo como:
-   * "MONDAY"
-   * "TUESDAY"
-   * "WEDNESDAY"
-   */
   if (frequency === "WEEKLY") {
     if (!day) {
       throw new Error("El día de la semana es requerido");
@@ -314,18 +249,6 @@ function calculateNextPayday(
       Number(formatInTimeZone(referenceDate, APP_TIMEZONE, "i")) % 7;
 
     let daysUntilTarget = (targetDay - currentDayOfWeek + 7) % 7;
-
-    /*
-     * Si es el mismo día de la semana, consideramos
-     * que el próximo pago es la semana siguiente.
-     *
-     * Ejemplo:
-     *
-     * Hoy = martes
-     * day = TUESDAY
-     *
-     * Próximo pago = martes de la semana siguiente.
-     */
     if (daysUntilTarget === 0) {
       daysUntilTarget = 7;
     }
@@ -333,17 +256,6 @@ function calculateNextPayday(
     return new Date(Date.UTC(year, month, today + daysUntilTarget, 3, 0, 0, 0));
   }
 
-  /*
-   * MONTHLY
-   *
-   * day debe ser un número:
-   *
-   * 4
-   * 5
-   * 10
-   * 14
-   * etc.
-   */
   if (frequency === "MONTHLY") {
     if (day === null) {
       throw new Error("El día del mes es requerido");
@@ -358,16 +270,6 @@ function calculateNextPayday(
     let targetYear = year;
     let targetMonth = month;
 
-    /*
-     * Si el día ya pasó, vamos al próximo mes.
-     *
-     * Ejemplo:
-     *
-     * Hoy = 12
-     * day = 10
-     *
-     * Próximo pago = día 10 del mes siguiente.
-     */
     if (today >= targetDay) {
       targetMonth += 1;
 
@@ -377,16 +279,6 @@ function calculateNextPayday(
       }
     }
 
-    /*
-     * Evitamos fechas inválidas.
-     *
-     * Por ejemplo:
-     *
-     * day = 31
-     * próximo mes = febrero
-     *
-     * → usamos el último día de febrero.
-     */
     const lastDayOfTargetMonth = new Date(
       Date.UTC(targetYear, targetMonth + 1, 0),
     ).getUTCDate();
@@ -465,4 +357,96 @@ const WEEK_DAYS: Record<DayOfWeek, number> = {
   THURSDAY: 4,
   FRIDAY: 5,
   SATURDAY: 6,
+};
+
+export const getDashboardHistory = async () => {
+  const auth = await getCurrentUser();
+  if (!auth.authenticated) {
+    if (
+      auth.reason === "SESSION_EXPIRED" ||
+      auth.reason === "SESSION_NOT_FOUND"
+    ) {
+      await invalidateSession();
+    }
+    throw new UnauthorizedError();
+  }
+  const userId = auth.session.userId;
+  const date = new Date();
+  const { currentDate, historyStartDate } = getLocalMonthBoundaries(date);
+  const previousMonthDate = new Date(currentDate);
+  previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+  previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+
+  const [globalTransactions, monthlyHistoryRaw] = await Promise.all([
+    // A. Saldo Total Histórico
+    prisma.transaction.groupBy({
+      by: ["type"],
+      where: { userId },
+      _sum: { amount: true },
+    }), // E. Totales mensuales (Sirve para gráfico histórico Y para extraer datos de mes actual/anterior)
+    prisma.$queryRaw<{ monthKey: string; type: string; total: number }[]>`
+      SELECT 
+        TO_CHAR(
+          DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}), 
+          'YYYY-MM'
+        ) as "monthKey",
+        "type",
+        SUM("amount")::float as total
+      FROM "Transaction"
+      WHERE "userId" = ${userId}
+        AND "date" >= ${historyStartDate}
+      GROUP BY 1, 2
+      ORDER BY 1 ASC
+    `,
+  ]);
+  const monthlyMap = new Map<string, { income: number; expense: number }>();
+  monthlyHistoryRaw.forEach((row) => {
+    const monthKey = row.monthKey;
+    const current = monthlyMap.get(monthKey) || { income: 0, expense: 0 };
+
+    if (row.type === "INCOME") current.income += Number(row.total);
+    if (row.type === "EXPENSE") current.expense += Number(row.total);
+
+    monthlyMap.set(monthKey, current);
+  });
+  const totalIncome = getAmount(globalTransactions, "INCOME");
+  const totalExpense = getAmount(globalTransactions, "EXPENSE");
+  const totalBalance = totalIncome - totalExpense;
+
+  const last36MonthsHistory = [];
+  let runningBalance = totalBalance;
+
+  for (let i = 0; i < 36; i++) {
+    const targetDate = subMonths(currentDate, i);
+    const monthKey = format(targetDate, "yyyy-MM");
+    const monthLabel = format(targetDate, "MMM yyyy");
+
+    const monthData = monthlyMap.get(monthKey) || { income: 0, expense: 0 };
+    const netChange = monthData.income - monthData.expense;
+
+    last36MonthsHistory.unshift({
+      monthKey,
+      label: monthLabel,
+      income: monthData.income,
+      expense: monthData.expense,
+      netChange,
+      accumulatedBalance: Number(runningBalance.toFixed(2)),
+    });
+
+    runningBalance -= netChange;
+  }
+  return {
+    historyMonthly: {
+      last6Months: last36MonthsHistory.slice(-6),
+      lastYear: last36MonthsHistory.slice(-12),
+      last3Years: last36MonthsHistory,
+    },
+  };
+};
+
+const getAmount = (arr: TransactionGroupByResult[], type: string) =>
+  arr.find((t) => t.type === type)?._sum.amount?.toNumber() || 0;
+type TransactionGroupByResult = {
+  type: string;
+  _sum: { amount?: { toNumber: () => number } | null };
 };

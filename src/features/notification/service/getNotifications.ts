@@ -7,7 +7,7 @@ async function getNotificationsService() {
     throw new Error("User not authenticated");
   }
 
-  return getNotificationsDb(auth.user.id);
+  return getNotificationsDb(auth.session.userId);
 }
 
 export default getNotificationsService;

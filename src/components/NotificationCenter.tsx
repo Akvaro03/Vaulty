@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import getNotificationApi from "@/features/notification/hook/getNotificationApi";
 import { NotificationType } from "@/generated/prisma/enums";
 import markAsReadApi from "@/features/notification/hook/markAsReadApi";
+import markAllAsReadService from "@/features/notification/service/markAllAsReadService";
 
 // ==========================================
 // 1. Tipos e Interfaces (Dominio)
@@ -174,7 +175,6 @@ export default function NotificationCenter() {
     queryFn: getNotificationApi,
     staleTime: 20,
   });
-  const { markAllAsRead } = useNotifications(MOCK_NOTIFICATIONS);
   const markAsReadMutation = useMutation({
     mutationFn: markAsReadApi,
     onSuccess: () => {
@@ -182,6 +182,10 @@ export default function NotificationCenter() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
+  const markAllAsRead = () => {
+    markAllAsReadService();
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  };
   useClickOutside(containerRef, () => setIsOpen(false));
   // Manejo de la tecla Escape para a11y
   useEffect(() => {
