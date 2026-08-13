@@ -1,9 +1,8 @@
 "use server";
 
-import createNotificationService from "@/features/notification/service/createNotification";
 import { CreateTransactionInput } from "../types/schemaTransactions";
-import createTransactions from "../data/create";
 import getCurrentUser from "@/features/auth/service/getCurrentUser";
+import createTransactions from "../data/create";
 
 async function createTransactionsService(data: CreateTransactionInput) {
   const auth = await getCurrentUser();
@@ -12,15 +11,6 @@ async function createTransactionsService(data: CreateTransactionInput) {
   }
 
   try {
-    await createNotificationService({
-      userId: auth.user.id,
-      createdAt: new Date(),
-      type: "ACTION_PROG",
-      message: "Se agrego un nuevo movimiento",
-      title: "Nueva transacción",
-      isRead: false,
-      link: "/",
-    });
     await createTransactions({
       ...data,
       userId: auth.user.id,

@@ -49,6 +49,14 @@ async function processRecurringTransaction(recurring: RecurringTransaction) {
         recurringTransactionId: recurring.id,
       },
     });
+    await tx.notification.create({
+      data: {
+        userId: recurring.userId,
+        message: `Se creo una transacción programada ${recurring.description}`,
+        title: "Transacción programada",
+        type: "RECURRING_DUE",
+      },
+    });
 
     await tx.recurringTransaction.update({
       where: {
