@@ -113,11 +113,3 @@ export function formatDate(dateString: Date | string) {
     year: "numeric",
   }).format(date);
 }
-
-export const formatCurrency = (value: number, opts?: { decimals?: boolean }) =>
-  new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: opts?.decimals ? 2 : 0,
-    maximumFractionDigits: opts?.decimals ? 2 : 0,
-  }).format(value);
