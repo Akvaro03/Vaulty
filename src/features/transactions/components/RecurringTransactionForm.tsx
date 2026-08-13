@@ -143,7 +143,7 @@ export function RecurringTransactionForm({ isOpen, closeForm }: Props) {
           Monto
         </label>
         <div className="flex items-center rounded-xl border border-border bg-secondary px-4 focus-within:border-primary">
-          <span className="text-xl font-semibold text-muted-foreground">€</span>
+          <span className="text-xl font-semibold text-muted-foreground">$</span>
           <input
             id="tx-amount"
             ref={amountRef}
