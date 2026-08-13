@@ -3,6 +3,7 @@ import { CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RecurringTransactionDialog } from "@/features/transactions/components/RecurringTransactionDialog";
+import { formatCurrency } from "@/lib/finance-data";
 
 export function SalaryCard({
   recurringTransaction,
