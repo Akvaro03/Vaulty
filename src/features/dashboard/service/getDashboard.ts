@@ -1,7 +1,4 @@
 "use server";
-import getTransactionService from "@/features/transactions/service/getTransaction";
-import getCategoriesService from "@/features/categories/service/getCategories";
-import getAccountService from "@/features/account/service/getService";
 import { APP_TIMEZONE, getLocalMonthBoundaries } from "@/lib/date-utils";
 import { format, subMonths } from "date-fns";
 import prisma from "@/lib/prisma";
@@ -15,9 +12,6 @@ import getAllCategoriesDb from "@/features/categories/data/get";
 import getAllTransactionsDb from "@/features/transactions/data/get";
 
 export async function getDashboardMetrics(date: Date = new Date()) {
-  const totalStart = performance.now();
-  let start = performance.now();
-
   const auth = await getCurrentUser();
   if (!auth.authenticated) {
     if (
@@ -29,8 +23,6 @@ export async function getDashboardMetrics(date: Date = new Date()) {
     throw new UnauthorizedError();
   }
   const userId = auth.session.userId;
-  // console.log(`[Dashboard] Auth: ${(performance.now() - start).toFixed(2)}ms`);
-  start = performance.now();
 
   const {
     currentMonth,
@@ -40,11 +32,6 @@ export async function getDashboardMetrics(date: Date = new Date()) {
     prevMonthEnd,
     prevMonthStart,
   } = getLocalMonthBoundaries(date);
-  // console.log(
-  //   `[Dashboard] Local Time: ${(performance.now() - start).toFixed(2)}ms`,
-  // );
-
-  start = performance.now();
   // 🚀 TODO EN PARALELO: Únicamente consultas livianas e indexadas
   const [
     accounts,
@@ -118,12 +105,7 @@ export async function getDashboardMetrics(date: Date = new Date()) {
     }),
   ]);
 
-  // console.log(
-  //   `[Dashboard] Peticiones en paralelo: ${(performance.now() - start).toFixed(2)}ms`,
-  // );
-
   // --- CÁLCULOS Y PROCESAMIENTO ---
-  start = performance.now();
   // Totales Mes Actual
   const currentIncome = getAmount(currentMonthTransactions, "INCOME");
   const currentExpense = getAmount(currentMonthTransactions, "EXPENSE");
@@ -172,13 +154,6 @@ export async function getDashboardMetrics(date: Date = new Date()) {
       (((current - previous) / Math.abs(previous)) * 100).toFixed(1),
     );
   };
-
-  // console.log(
-  //   `[Dashboard] Total de cálculos: ${(performance.now() - start).toFixed(2)}ms`,
-  // );
-  // console.log(
-  //   `[Dashboard] TOTAL: ${(performance.now() - totalStart).toFixed(2)}ms`,
-  // );
 
   return {
     metrics: {
@@ -370,6 +345,7 @@ export const getDashboardHistory = async () => {
     }
     throw new UnauthorizedError();
   }
+
   const userId = auth.session.userId;
   const date = new Date();
   const { currentDate, historyStartDate } = getLocalMonthBoundaries(date);
@@ -386,19 +362,17 @@ export const getDashboardHistory = async () => {
     }), // E. Totales mensuales (Sirve para gráfico histórico Y para extraer datos de mes actual/anterior)
     prisma.$queryRaw<{ monthKey: string; type: string; total: number }[]>`
       SELECT 
-        TO_CHAR(
-          DATE_TRUNC('month', "date" AT TIME ZONE 'UTC' AT TIME ZONE ${APP_TIMEZONE}), 
-          'YYYY-MM'
-        ) as "monthKey",
-        "type",
-        SUM("amount")::float as total
-      FROM "Transaction"
-      WHERE "userId" = ${userId}
-        AND "date" >= ${historyStartDate}
-      GROUP BY 1, 2
-      ORDER BY 1 ASC
+  TO_CHAR("date" AT TIME ZONE ${APP_TIMEZONE}, 'YYYY-MM') as "monthKey",
+  "type",
+  SUM("amount")::float as total
+FROM "Transaction"
+WHERE "userId" = ${userId}
+  AND "date" >= ${historyStartDate}
+GROUP BY 1, 2
+ORDER BY 1 ASC
     `,
   ]);
+
   const monthlyMap = new Map<string, { income: number; expense: number }>();
   monthlyHistoryRaw.forEach((row) => {
     const monthKey = row.monthKey;
