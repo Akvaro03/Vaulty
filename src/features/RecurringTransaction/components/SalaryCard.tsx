@@ -1,9 +1,9 @@
+import { RecurringTransactionDialog } from "@/features/transactions/components/RecurringTransactionDialog";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { salaryType } from "@/features/dashboard/type";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { RecurringTransactionDialog } from "@/features/transactions/components/RecurringTransactionDialog";
-import { formatCurrency } from "@/lib/finance-data";
 
 export function SalaryCard({
   recurringTransaction,
@@ -56,13 +56,17 @@ export function SalaryCard({
         </span>
       </div>
 
-      <p className="mt-4 text-sm text-muted-foreground">
-        Neto mensual · {summary && formatCurrency(summary.totalIncome)}
-      </p>
+      {summary && (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Neto mensual · <AnimatedNumber value={summary.totalIncome} />
+        </p>
+      )}
 
-      <p className="mt-1 text-3xl font-semibold tracking-tight">
-        {formatCurrency(summary?.sueldoNeto)}
-      </p>
+      {summary && (
+        <p className="mt-1 text-3xl font-semibold tracking-tight">
+          <AnimatedNumber value={summary.sueldoNeto} />
+        </p>
+      )}
 
       <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-secondary/60 p-3 text-sm">
         <CalendarClock
@@ -92,7 +96,7 @@ export function SalaryCard({
                 )}
               >
                 {negative ? "-" : ""}
-                {formatCurrency(Math.abs(row.expectedAmount))}
+                <AnimatedNumber value={Math.abs(row.expectedAmount)} />
               </span>
             </li>
           );

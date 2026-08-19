@@ -117,7 +117,6 @@ export function RecentTransactions({
                   transition={{ duration: 0.05 }}
                   className="group flex items-center gap-3 border-b border-border py-3 transition-colors hover:bg-muted/50 sm:px-2 last:border-0 overflow-hidden"
                 >
-                  {" "}
                   {/* 1. Icono */}
                   <span
                     className={cn(

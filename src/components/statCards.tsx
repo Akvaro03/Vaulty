@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/finance-data";
 import { cn } from "@/lib/utils";
 import { DashboardMetrics } from "@/features/dashboard/type";
 import { Skeleton } from "./ui/skeleton";
-
+import { AnimatedNumber } from "./AnimatedNumber";
 
 type StatCardsProps = {
   data?: DashboardMetrics;
@@ -28,9 +28,7 @@ export function StatCards({ data, isLoading }: StatCardsProps) {
             label="Ingresos"
             positive
             sub="Este mes"
-            value={
-              data?.income.amount ? formatCurrency(data.income.amount) : "$0.00"
-            }
+            value={<AnimatedNumber value={data.income.amount || 0} />}
           />
           <StatCard
             delta={String(data?.expense.percentageChange || "")}
@@ -38,11 +36,7 @@ export function StatCards({ data, isLoading }: StatCardsProps) {
             label="Gastos"
             positive
             sub="Este mes"
-            value={
-              data?.expense.amount
-                ? formatCurrency(data.expense.amount)
-                : "$0.00"
-            }
+            value={<AnimatedNumber value={data.expense.amount || 0} />}
           />
           <StatCard
             delta={String(data?.savings.percentageChange || "")}
@@ -50,11 +44,7 @@ export function StatCards({ data, isLoading }: StatCardsProps) {
             label="Ahorro"
             positive
             sub="Este mes"
-            value={
-              data?.savings.amount
-                ? formatCurrency(data.savings.amount)
-                : "$0.00"
-            }
+            value={<AnimatedNumber value={data.savings.amount || 0} />}
           />
           <StatCard
             delta={
@@ -86,7 +76,7 @@ const StatCard = ({
   sub,
 }: {
   label: string;
-  value: string;
+  value: React.ReactNode;
   delta: string;
   positive: boolean;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;

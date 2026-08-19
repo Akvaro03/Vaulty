@@ -1,6 +1,7 @@
 import { ArrowUpRight, ArrowDownRight, Eye } from "lucide-react";
 import { formatCurrency } from "@/lib/finance-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 
 export function BalanceCard({
   balance,
@@ -39,9 +40,12 @@ export function BalanceCard({
       </div>
 
       {balance !== undefined ? (
-        <p className="relative mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
-          {formatCurrency(balance, { decimals: true })}
-        </p>
+        <>
+          <p className="relative mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
+            <AnimatedNumber value={balance} />
+            {/* {formatCurrency(balance, { decimals: true })} */}
+          </p>
+        </>
       ) : (
         <Skeleton className="mt-3 h-10 w-32 bg-primary-foreground/20" />
       )}

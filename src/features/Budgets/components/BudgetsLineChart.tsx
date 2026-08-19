@@ -3,6 +3,8 @@ import { budgetProgress } from "@/features/dashboard/type";
 import { formatCurrency } from "@/lib/finance-data";
 import { cn } from "@/lib/utils";
 import { BudgetDialog } from "./BudgetDialog";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { AnimatePresence, motion } from "framer-motion";
 
 export function Budgets({
   budgets,
@@ -16,6 +18,7 @@ export function Budgets({
       <div className="flex items-center justify-between">
         <BudgetDialog />
         <h2 className="text-base font-semibold">Presupuestos</h2>
+
         <button className="text-sm font-medium text-primary transition-opacity hover:opacity-80">
           Gestionar
         </button>
@@ -34,33 +37,52 @@ export function Budgets({
         ) : (
           budgets.map((b, key) => {
             const pct = Math.min(Math.round((b.spent / b.limit) * 100), 100);
+
             const over = b.spent > b.limit;
+
             return (
               <li key={key}>
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{b.categoryName}</span>
+
                   <span className="text-muted-foreground">
-                    <span className={cn(over && "text-primary font-medium")}>
-                      {formatCurrency(b.spent)}
+                    <span className={cn(over && "font-medium text-primary")}>
+                      <AnimatedNumber value={b.spent} />
                     </span>{" "}
                     / {formatCurrency(b.limit)}
                   </span>
                 </div>
+
                 <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div
+                  <motion.div
                     className={cn(
                       "h-full rounded-full",
                       over ? "bg-primary" : "bg-foreground/70",
                     )}
-                    style={{ width: `${pct}%` }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{
+                      duration: 0.4,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
                   />
                 </div>
-                {over && (
-                  <p className="mt-1.5 text-xs font-medium text-primary">
-                    Has superado el límite en{" "}
-                    {formatCurrency(b.spent - b.limit)}
-                  </p>
-                )}
+
+                <AnimatePresence mode="wait">
+                  {over && (
+                    <motion.p
+                      key="over-budget"
+                      initial={{ opacity: 0, height: 0, y: -4 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -4 }}
+                      transition={{ duration: 0.25 }}
+                      className="mt-1.5 text-xs font-medium text-primary"
+                    >
+                      Has superado el límite en{" "}
+                      <AnimatedNumber value={b.spent - b.limit} />
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </li>
             );
           })
