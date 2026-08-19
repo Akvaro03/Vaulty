@@ -1,20 +1,20 @@
 "use client";
 import { RecentTransactions } from "@/features/transactions/components/RecentTransactions";
 import { MoneyEvolutionChart } from "@/features/RecurringTransaction/components/MoneyEvolutionChart";
+import { SalaryCard } from "@/features/RecurringTransaction/components/SalaryCard";
 import { CategoryChart } from "@/features/categories/components/CategoryChart";
 import { Budgets } from "@/features/Budgets/components/BudgetsLineChart";
-import { SalaryCard } from "@/features/RecurringTransaction/components/SalaryCard";
 import { BalanceCard } from "@/features/user/component/BalanceCard";
 import { Goals } from "@/features/goals/components/GoalsLineChart";
+import { UnauthorizedError } from "@/features/auth/types/authType";
+import getDashboardHistory from "@/hooks/getDashboardHistory";
 import { StatCards } from "@/components/statCards";
+import { useQuery } from "@tanstack/react-query";
+import getDashboard from "@/hooks/getDashboard";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
-import getDashboard from "@/hooks/getDashboard";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { UnauthorizedError } from "@/features/auth/types/authType";
 import { useRouter } from "next/navigation";
-import getDashboardHistory from "@/hooks/getDashboardHistory";
+import { useEffect } from "react";
 
 export default function Page() {
   const router = useRouter();
@@ -84,6 +84,7 @@ export default function Page() {
               <RecentTransactions
                 data={dashboard?.transactions}
                 isLoadingData={isLoadingDashboard}
+                onEdit={(data) => console.log(data)}
               />
               <Goals />
             </div>

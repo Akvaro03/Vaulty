@@ -1,7 +1,7 @@
 import { TransactionType } from "@/generated/prisma/enums";
 
 export interface transactionType {
-  id?: string;
+  id: string;
   userId?: string;
   accountId?: string;
   categoryId?: string;
